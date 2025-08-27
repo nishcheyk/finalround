@@ -3,6 +3,9 @@ import mongoose, { Document, Schema, model } from "mongoose";
 /**
  * User document interface
  */
+/* The `export interface IUser extends Document` in the TypeScript code snippet is defining an
+interface named `IUser` that extends the `Document` interface provided by Mongoose. This interface
+specifies the structure of a user document in the MongoDB database. */
 export interface IUser extends Document {
   name: string;
   email: string;
@@ -12,6 +15,8 @@ export interface IUser extends Document {
   refreshTokens: string[]; // store refresh tokens to enable token revocation
 }
 
+/* The `const UserSchema = new Schema<IUser>({ ... });` code snippet is defining a Mongoose schema for
+the User model. Here's a breakdown of what each property in the schema is doing: */
 const UserSchema = new Schema<IUser>({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
@@ -22,6 +27,8 @@ const UserSchema = new Schema<IUser>({
 });
 
 // Prevent OverwriteModelError in watch mode
+/* The code snippet `if (mongoose.models.User) { delete mongoose.models.User; }` is a precautionary
+measure to prevent an `OverwriteModelError` that can occur in watch mode when using Mongoose models. */
 if (mongoose.models.User) {
   delete mongoose.models.User;
 }

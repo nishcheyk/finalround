@@ -1,17 +1,17 @@
-import React, { useState } from "react";
+import React, { memo, useState } from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { PopoverForm } from "./ui/PopOverfrom";
 import styles from "../styles/ThemeStyle.module.css";
 
-import { useSelector, useDispatch } from "react-redux";
-import { RootState } from "../store/store";
-import { setMode, ThemeMode } from "../store/themeSlice";
+import { useAppSelector, useAppDispatch } from "../store/hooks";
+import { setMode } from "../store/themeSlice";
+import { ThemeMode } from "../store/themeSlice";
 
 export function ColorThemeSwitcher() {
   const [open, setOpen] = useState(false);
-  const mode = useSelector((state: RootState) => state.theme.mode);
-  const dispatch = useDispatch();
+  const mode = useAppSelector((state) => state.theme.mode);
+  const dispatch = useAppDispatch();
 
   const themes: ThemeMode[] = ["light", "dark", "system"];
 
@@ -104,3 +104,9 @@ export function ColorThemeSwitcher() {
     </>
   );
 }
+
+// Keep the memoized version for backward compatibility
+const ThemeSelector = memo(ColorThemeSwitcher);
+ThemeSelector.displayName = 'ThemeSelector';
+
+export { ThemeSelector };

@@ -1,85 +1,82 @@
-import React, { ComponentType, useState, useCallback } from 'react';
-import { toast } from 'react-toastify';
-import { Box, Alert, Button } from '@mui/material';
-import { Refresh as RefreshIcon } from '@mui/icons-material';
+import React, { ComponentType, useState } from 'react';
+import { Alert, Snackbar } from '@mui/material';
 
 interface WithErrorHandlingProps {
   showErrorBoundary?: boolean;
-  onError?: (error: Error) => void;
+  autoHideDuration?: number;
+  position?: 'top' | 'bottom';
 }
 
 export function withErrorHandling<P extends object>(
-  WrappedComponent: ComponentType<P>,
+  Component: ComponentType<P>,
   options: WithErrorHandlingProps = {}
 ) {
-  const { showErrorBoundary = true, onError } = options;
+  const {
+    showErrorBoundary = true,
+    autoHideDuration = 6000,
+    position = 'top'
+  } = options;
 
-  return function ErrorHandledComponent(props: P) {
-    const [error, setError] = useState<Error | null>(null);
-    const [isRetrying, setIsRetrying] = useState(false);
+  return function WithErrorHandlingComponent(props: P) {
+    const [error, setError] = useState<string | null>(null);
+    const [open, setOpen] = useState(false);
 
-    const handleError = useCallback((err: Error) => {
-      console.error('Error in component:', err);
-      setError(err);
-      
-      // Show toast notification
-      toast.error(err.message || 'An error occurred');
-      
-      // Call custom error handler if provided
-      if (onError) {
-        onError(err);
-      }
-    }, [onError]);
+    const handleError = (errorMessage: string) => {
+      setError(errorMessage);
+      setOpen(true);
+    };
 
-    const handleRetry = useCallback(() => {
-      setIsRetrying(true);
+    const clearError = () => {
       setError(null);
-      
-      // Simulate retry delay
-      setTimeout(() => {
-        setIsRetrying(false);
-      }, 1000);
-    }, []);
+      setOpen(false);
+    };
 
-    const clearError = useCallback(() => {
-      setError(null);
-    }, []);
+    const handleClose = () => {
+      setOpen(false);
+    };
 
-    // If there's an error and we want to show error boundary
-    if (error && showErrorBoundary) {
-      return (
-        <Box p={3}>
-          <Alert 
-            severity="error" 
-            action={
-              <Button
-                color="inherit"
-                size="small"
-                startIcon={<RefreshIcon />}
-                onClick={handleRetry}
-                disabled={isRetrying}
-              >
-                {isRetrying ? 'Retrying...' : 'Retry'}
-              </Button>
-            }
-          >
-            {error.message || 'Something went wrong'}
-          </Alert>
-        </Box>
-      );
-    }
+    // Expose error handling to wrapped component
+    const enhancedProps = {
+      ...props,
+      error,
+      handleError,
+      clearError
+    };
 
     return (
-      <WrappedComponent 
-        {...props} 
-        onError={handleError}
-        clearError={clearError}
-        isRetrying={isRetrying}
-      />
+      <>
+        <Component {...enhancedProps} />
+        
+        {showErrorBoundary && (
+          <Snackbar
+            open={open}
+            autoHideDuration={autoHideDuration}
+            onClose={handleClose}
+            anchorOrigin={{ 
+              vertical: position === 'top' ? 'top' : 'bottom', 
+              horizontal: 'center' 
+            }}
+          >
+            <Alert 
+              onClose={handleClose} 
+              severity="error" 
+              sx={{ width: '100%' }}
+            >
+              {error}
+            </Alert>
+          </Snackbar>
+        )}
+      </>
     );
   };
 }
 
-// Convenience HOC for API error handling
-export const withApiErrorHandling = <P extends object>(Component: ComponentType<P>) =>
-  withErrorHandling(Component, { showErrorBoundary: true });
+// Convenience HOCs for common use cases
+export const withTopErrorHandling = <P extends object>(Component: ComponentType<P>) =>
+  withErrorHandling(Component, { position: 'top' });
+
+export const withBottomErrorHandling = <P extends object>(Component: ComponentType<P>) =>
+  withErrorHandling(Component, { position: 'bottom' });
+
+export const withPersistentErrorHandling = <P extends object>(Component: ComponentType<P>) =>
+  withErrorHandling(Component, { autoHideDuration: 0 });

@@ -1,6 +1,6 @@
-import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import { connectDB, disconnectDB } from './index'; // Adjust to your main app entry file
+import mongoose from "mongoose";
+import { MongoMemoryServer } from "mongodb-memory-server";
+import { connectDB, disconnectDB } from "./index"; // Adjust to your main app entry file
 
 let mongoServer: MongoMemoryServer;
 
@@ -14,9 +14,9 @@ afterAll(async () => {
   await mongoServer.stop();
 });
 beforeEach(async () => {
-    await mongoose.connection.collection('users').deleteMany({});
-  });
-  
+  await mongoose.connection.collection("users").deleteMany({});
+});
+
 beforeEach(async () => {
   for (const key in mongoose.connection.collections) {
     await mongoose.connection.collections[key].deleteMany({});

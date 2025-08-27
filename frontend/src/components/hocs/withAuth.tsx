@@ -1,58 +1,66 @@
 import React, { ComponentType } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
-import { Navigate, useLocation } from 'react-router-dom';
 import LoadingSpinner from '../LoadingSpinner';
 
 interface WithAuthProps {
   requireAuth?: boolean;
   requireAdmin?: boolean;
   redirectTo?: string;
+  loadingMessage?: string;
 }
 
 export function withAuth<P extends object>(
-  WrappedComponent: ComponentType<P>,
+  Component: ComponentType<P>,
   options: WithAuthProps = {}
 ) {
   const {
     requireAuth = true,
     requireAdmin = false,
-    redirectTo = '/login'
+    redirectTo = '/login',
+    loadingMessage = 'Checking authentication...'
   } = options;
 
-  return function AuthenticatedComponent(props: P) {
-    const { isAuthenticated, user, isLoading } = useAppSelector(state => state.auth);
-    const location = useLocation();
+  return function WithAuthComponent(props: P) {
+    const { isAuthenticated, user, isLoading } = useAppSelector((state) => state.auth);
 
-    // Show loading spinner while checking auth status
+    // Show loading while checking auth state
     if (isLoading) {
-      return <LoadingSpinner message="Checking authentication..." />;
+      return <LoadingSpinner message={loadingMessage} />;
     }
 
-    // If auth is required but user is not authenticated
+    // Handle authentication requirements
     if (requireAuth && !isAuthenticated) {
-      return <Navigate to={redirectTo} state={{ from: location }} replace />;
+      return <Navigate to={redirectTo} replace />;
     }
 
-    // If admin access is required but user is not admin
+    // Handle admin requirements
     if (requireAdmin && (!user || !user.isAdmin)) {
       return <Navigate to="/" replace />;
     }
 
-    // If user is authenticated but shouldn't be (e.g., login page)
+    // Redirect authenticated users away from auth pages
     if (!requireAuth && isAuthenticated) {
       return <Navigate to="/" replace />;
     }
 
-    return <WrappedComponent {...props} />;
+    // Render the component with auth context
+    const enhancedProps = {
+      ...props,
+      user,
+      isAuthenticated
+    };
+
+    return <Component {...enhancedProps} />;
   };
 }
 
 // Convenience HOCs for common use cases
-export const withPublicAuth = <P extends object>(Component: ComponentType<P>) =>
+export const withPublicAccess = <P extends object>(Component: ComponentType<P>) =>
   withAuth(Component, { requireAuth: false, redirectTo: '/' });
 
-export const withAdminAuth = <P extends object>(Component: ComponentType<P>) =>
-  withAuth(Component, { requireAuth: true, requireAdmin: true, redirectTo: '/login' });
-
-export const withUserAuth = <P extends object>(Component: ComponentType<P>) =>
+export const withUserAccess = <P extends object>(Component: ComponentType<P>) =>
   withAuth(Component, { requireAuth: true, redirectTo: '/login' });
+
+export const withAdminAccess = <P extends object>(Component: ComponentType<P>) =>
+  withAuth(Component, { requireAuth: true, requireAdmin: true, redirectTo: '/login' });

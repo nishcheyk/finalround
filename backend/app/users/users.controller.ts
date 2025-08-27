@@ -7,7 +7,7 @@ import {
   logoutUserService,
   resetPasswordService,
 } from "./user.service";
-
+import User from "./user.schema";
 /**
  * User Registration Controller
  * Handles user registration with validation
@@ -21,7 +21,7 @@ export const registerController = asyncHandler(
       message: "User registered successfully",
       userId: user._id,
     });
-  }
+  },
 );
 
 /**
@@ -31,17 +31,17 @@ export const registerController = asyncHandler(
 export const loginController = asyncHandler(
   async (req: Request, res: Response) => {
     const { email, password } = req.body;
-    
+
     const { token, refreshToken, user } = await loginUserService({
       email,
       password,
     });
 
     // Set refresh token as httpOnly cookie for security
-    res.cookie('refreshToken', refreshToken, {
+    res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
@@ -51,7 +51,7 @@ export const loginController = asyncHandler(
       token,
       user,
     });
-  }
+  },
 );
 
 /**
@@ -61,27 +61,28 @@ export const loginController = asyncHandler(
 export const refreshTokenController = asyncHandler(
   async (req: Request, res: Response) => {
     const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
-    
+
     if (!refreshToken) {
       res.status(401);
       throw new Error("Refresh token missing");
     }
-    
-    const { newToken, newRefreshToken } = await refreshAccessTokenService(refreshToken);
-    
+
+    const { newToken, newRefreshToken } =
+      await refreshAccessTokenService(refreshToken);
+
     // Set new refresh token as httpOnly cookie
-    res.cookie('refreshToken', newRefreshToken, {
+    res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    res.json({ 
-      success: true, 
-      token: newToken 
+    res.json({
+      success: true,
+      token: newToken,
     });
-  }
+  },
 );
 
 /**
@@ -91,28 +92,28 @@ export const refreshTokenController = asyncHandler(
 export const logoutController = asyncHandler(
   async (req: Request, res: Response) => {
     const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
-    
+
     if (!refreshToken) {
       res.status(400);
       throw new Error("Refresh token missing");
     }
-    
+
     const success = await logoutUserService(refreshToken);
-    
+
     if (success) {
       // Clear the refresh token cookie
-      res.clearCookie('refreshToken', {
+      res.clearCookie("refreshToken", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
       });
-      
+
       res.json({ success: true, message: "Logged out successfully" });
     } else {
       res.status(400);
       throw new Error("Invalid refresh token");
     }
-  }
+  },
 );
 
 /**
@@ -124,3 +125,14 @@ export const resetPasswordController = asyncHandler(async (req, res) => {
   const result = await resetPasswordService({ email, password });
   res.json(result);
 });
+
+export const getAllUsersController = asyncHandler(
+  async (req: Request, res: Response) => {
+    try {
+      const users = await User.find({}, "_id name email").lean();
+      res.status(200).json({ users });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  },
+);

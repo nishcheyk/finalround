@@ -60,6 +60,11 @@ export const logoutLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+/* The `resetPasswordLimiter` constant is defining a rate limiter middleware for the reset password
+endpoint. It limits each IP address to 5 password reset attempts per 15 minutes to prevent abuse or
+potential attacks. If the limit is exceeded, a status code of 429 (Too Many Requests) is returned
+along with an error message "Too many password reset attempts, please try later." This middleware
+includes standard headers in the response and does not include legacy headers. */
 export const resetPasswordLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 mins
   max: 5, // limit to 5 reset attempts per IP per windowMs

@@ -1,65 +1,50 @@
-import React, { ComponentType, useState, useCallback } from 'react';
+import React, { ComponentType, useState, useEffect } from 'react';
 import LoadingSpinner from '../LoadingSpinner';
 
 interface WithLoadingProps {
-  loadingMessage?: string;
-  showSpinner?: boolean;
   fullScreen?: boolean;
+  showSpinner?: boolean;
+  message?: string;
 }
 
 export function withLoading<P extends object>(
-  WrappedComponent: ComponentType<P>,
+  Component: ComponentType<P>,
   options: WithLoadingProps = {}
 ) {
   const {
-    loadingMessage = "Loading...",
+    fullScreen = false,
     showSpinner = true,
-    fullScreen = false
+    message = 'Loading...'
   } = options;
 
-  return function LoadingComponent(props: P) {
+  return function WithLoadingComponent(props: P) {
     const [isLoading, setIsLoading] = useState(false);
-    const [loadingText, setLoadingText] = useState(loadingMessage);
 
-    const startLoading = useCallback((message?: string) => {
-      setIsLoading(true);
-      if (message) {
-        setLoadingText(message);
-      }
-    }, []);
+    const setLoading = (loading: boolean) => {
+      setIsLoading(loading);
+    };
 
-    const stopLoading = useCallback(() => {
-      setIsLoading(false);
-      setLoadingText(loadingMessage);
-    }, [loadingMessage]);
+    // Expose loading state to wrapped component
+    const enhancedProps = {
+      ...props,
+      isLoading,
+      setLoading
+    };
 
-    const setLoadingMessage = useCallback((message: string) => {
-      setLoadingText(message);
-    }, []);
-
-    // Show loading spinner if loading and spinner is enabled
     if (isLoading && showSpinner) {
       return (
-        <LoadingSpinner 
-          message={loadingText} 
-          fullScreen={fullScreen} 
+        <LoadingSpinner
+          message={message}
+          fullScreen={fullScreen}
         />
       );
     }
 
-    return (
-      <WrappedComponent
-        {...props}
-        isLoading={isLoading}
-        startLoading={startLoading}
-        stopLoading={stopLoading}
-        setLoadingMessage={setLoadingMessage}
-      />
-    );
+    return <Component {...enhancedProps} />;
   };
 }
 
-// Convenience HOCs for common loading patterns
+// Convenience HOCs for common use cases
 export const withFullScreenLoading = <P extends object>(Component: ComponentType<P>) =>
   withLoading(Component, { fullScreen: true, showSpinner: true });
 

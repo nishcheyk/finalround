@@ -1,6 +1,7 @@
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction, Request } from "express";
 import jwt from "jsonwebtoken";
 import createHttpError from "http-errors";
+import { AuthenticatedUser } from "../../types/express";
 
 interface JwtPayload {
   userId: string;
@@ -28,9 +29,16 @@ export const authenticator =
       }
 
       const decoded = jwt.verify(token, secret) as JwtPayload;
-      req.user = decoded;
 
-      if (requireAdmin && !decoded.isAdmin) {
+      const user: AuthenticatedUser = {
+        userId: decoded.userId,
+        email: decoded.email,
+        isAdmin: decoded.isAdmin,
+      };
+
+      req.user = user;
+
+      if (requireAdmin && !user.isAdmin) {
         throw createHttpError(403, "Access denied: Admins only");
       }
 

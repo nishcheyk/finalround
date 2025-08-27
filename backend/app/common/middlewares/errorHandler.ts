@@ -6,12 +6,12 @@ import createHttpError from "http-errors";
  * Returns JSON with status code and error message.
  */
 const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
-  console.error('Error:', {
+  console.error("Error:", {
     message: err.message,
     stack: err.stack,
     url: req.url,
     method: req.method,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 
   // Handle validation errors
@@ -20,37 +20,37 @@ const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
       success: false,
       status: 400,
       message: "Validation failed",
-      errors: err.errors
+      errors: err.errors,
     });
   }
 
   // Handle JWT errors
-  if (err.name === 'JsonWebTokenError') {
+  if (err.name === "JsonWebTokenError") {
     return res.status(401).json({
       success: false,
       status: 401,
-      message: "Invalid token"
+      message: "Invalid token",
     });
   }
 
-  if (err.name === 'TokenExpiredError') {
+  if (err.name === "TokenExpiredError") {
     return res.status(401).json({
       success: false,
       status: 401,
-      message: "Token expired"
+      message: "Token expired",
     });
   }
 
   // Handle MongoDB errors
-  if (err.name === 'ValidationError') {
+  if (err.name === "ValidationError") {
     return res.status(400).json({
       success: false,
       status: 400,
       message: "Validation failed",
       errors: Object.values(err.errors).map((e: any) => ({
         field: e.path,
-        message: e.message
-      }))
+        message: e.message,
+      })),
     });
   }
 
@@ -59,7 +59,7 @@ const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
       success: false,
       status: 400,
       message: "Duplicate field value",
-      field: Object.keys(err.keyPattern)[0]
+      field: Object.keys(err.keyPattern)[0],
     });
   }
 
@@ -69,7 +69,8 @@ const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   res.status(status).json({
     success: false,
     status,
-    message: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : message,
+    message:
+      process.env.NODE_ENV === "production" ? "Internal Server Error" : message,
   });
 };
 

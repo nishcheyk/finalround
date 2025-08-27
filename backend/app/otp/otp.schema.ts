@@ -18,7 +18,7 @@ const otpSchema = new Schema<IOTP>(
     attempts: { type: Number, default: 0 },
     lastSentAt: { type: Date, default: Date.now },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model<IOTP>("OTP", otpSchema);

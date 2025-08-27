@@ -38,6 +38,12 @@ export default function VerifyOtpForm({
     resolver: yupResolver(schema),
   });
 
+ /**
+  * The onSubmit function handles OTP verification and displays success or error messages accordingly.
+  * @param {FormData} data - The `data` parameter in the `onSubmit` function is of type `FormData`. It
+  * likely contains information submitted by the user, such as the OTP (One-Time Password) entered in a
+  * form.
+  */
   const onSubmit = async (data: FormData) => {
     try {
       setError(null);

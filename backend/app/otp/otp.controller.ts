@@ -22,7 +22,7 @@ export const sendOTPController = asyncHandler(
     } catch (error: any) {
       res.status(429).json({ success: false, message: error.message });
     }
-  }
+  },
 );
 
 /**
@@ -40,5 +40,5 @@ export const verifyOTPController = asyncHandler(
     }
 
     res.json({ success: true, message: "OTP verified successfully" });
-  }
+  },
 );

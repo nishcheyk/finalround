@@ -4,6 +4,7 @@
     "target": "es2016",
     "module": "commonjs",
     "outDir": "./dist",
+
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
@@ -11,5 +12,5 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
-  "include": ["src/**/*", "express.d.ts"]
+  "include": ["index.ts", "app/**/*"]
 }

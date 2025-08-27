@@ -1,13 +1,15 @@
 import { Box, Typography } from "@mui/material";
-
 import { CardCarousel } from "../components/ui/card-carousel";
+import ManualRefreshButton from "../components/ManualRefreshButton";
+import { withUserAccess } from "../components/hocs";
+
 const images = [
   { src: "/card/1.png", alt: "Image 1" },
   { src: "/card/3.png", alt: "Image 2" },
   { src: "/card/4.png", alt: "Image 3" },
 ];
-import ManualRefreshButton from "../components/ManualRefreshButton";
-const Home = () => {
+
+const HomeComponent = () => {
   return (
     <>
       <div className="pt-40">
@@ -27,5 +29,8 @@ const Home = () => {
     </>
   );
 };
+
+// Apply withUserAccess HOC to ensure only authenticated users can access
+const Home = withUserAccess(HomeComponent);
 
 export default Home;

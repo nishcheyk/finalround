@@ -50,7 +50,7 @@ export const loginUserService = async (dto: LoginDTO) => {
   const token = jwt.sign(
     { userId: user._id, isAdmin: user.isAdmin, email: user.email },
     JWT_SECRET,
-    { expiresIn: "15m" }
+    { expiresIn: "15m" },
   );
 
   // Generate refresh token (long expiry)
@@ -87,24 +87,24 @@ export const refreshAccessTokenService = async (refreshToken: string) => {
     if (!user.refreshTokens.includes(refreshToken)) {
       throw new Error("Refresh token revoked");
     }
-    
+
     // Generate new access token
     const newToken = jwt.sign(
       { userId: user._id, isAdmin: user.isAdmin, email: user.email },
       JWT_SECRET,
-      { expiresIn: "15m" }
+      { expiresIn: "15m" },
     );
-    
+
     // Generate new refresh token (token rotation)
     const newRefreshToken = jwt.sign({ userId: user._id }, JWT_REFRESH_SECRET, {
       expiresIn: "7d",
     });
-    
+
     // Remove old refresh token and add new one
     user.refreshTokens = user.refreshTokens.filter((t) => t !== refreshToken);
     user.refreshTokens.push(newRefreshToken);
     await user.save();
-    
+
     return { newToken, newRefreshToken };
   } catch {
     throw new Error("Invalid refresh token");

@@ -46,7 +46,7 @@ const getTheme = (mode: "light" | "dark" | "system") => {
       },
       text: {
         primary: isLight ? grey[900] : "#fff",
-        secondary: isLight ? grey[700] : grey[400],
+        secondary: isLight ? grey[900] : grey[400],
       },
       divider: isLight ? blueGrey[200] : grey[600],
       action: {

@@ -61,7 +61,7 @@ export async function disconnectDB() {
 if (process.env.NODE_ENV !== "test") {
   connectDB(process.env.MONGODB_URI!).then(() => {
     app.listen(3000, () =>
-      console.log("Server running on port 3000. Swagger docs at /api-docs")
+      console.log("Server running on port 3000. Swagger docs at /api-docs"),
     );
   });
 }

@@ -1,218 +1,218 @@
-import { Express } from 'express';
-import swaggerJsdoc from 'swagger-jsdoc';
+import { Express } from "express";
+import swaggerJsdoc from "swagger-jsdoc";
 
 const options = {
   definition: {
-    openapi: '3.0.0',
+    openapi: "3.0.0",
     info: {
-      title: 'Event Booking API',
-      version: '1.0.0',
-      description: 'A comprehensive API for event booking and management',
+      title: "Event Booking API",
+      version: "1.0.0",
+      description: "A comprehensive API for event booking and management",
       contact: {
-        name: 'API Support',
-        email: 'support@eventbooking.com'
+        name: "API Support",
+        email: "support@eventbooking.com",
       },
       license: {
-        name: 'MIT',
-        url: 'https://opensource.org/licenses/MIT'
-      }
+        name: "MIT",
+        url: "https://opensource.org/licenses/MIT",
+      },
     },
     servers: [
       {
-        url: 'http://localhost:3000/api',
-        description: 'Development server'
+        url: "http://localhost:3000/api",
+        description: "Development server",
       },
       {
-        url: 'https://api.eventbooking.com/api',
-        description: 'Production server'
-      }
+        url: "https://api.eventbooking.com/api",
+        description: "Production server",
+      },
     ],
     components: {
       securitySchemes: {
         bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT'
-        }
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
       },
       schemas: {
         User: {
-          type: 'object',
+          type: "object",
           properties: {
             id: {
-              type: 'string',
-              description: 'User ID'
+              type: "string",
+              description: "User ID",
             },
             name: {
-              type: 'string',
-              description: 'User full name',
+              type: "string",
+              description: "User full name",
               minLength: 2,
-              maxLength: 50
+              maxLength: 50,
             },
             email: {
-              type: 'string',
-              format: 'email',
-              description: 'User email address'
+              type: "string",
+              format: "email",
+              description: "User email address",
             },
             phone: {
-              type: 'string',
-              description: 'User phone number'
+              type: "string",
+              description: "User phone number",
             },
             isAdmin: {
-              type: 'boolean',
-              description: 'Whether user is admin'
-            }
+              type: "boolean",
+              description: "Whether user is admin",
+            },
           },
-          required: ['name', 'email']
+          required: ["name", "email"],
         },
         LoginRequest: {
-          type: 'object',
+          type: "object",
           properties: {
             email: {
-              type: 'string',
-              format: 'email',
-              description: 'User email'
+              type: "string",
+              format: "email",
+              description: "User email",
             },
             password: {
-              type: 'string',
-              description: 'User password',
-              minLength: 1
-            }
+              type: "string",
+              description: "User password",
+              minLength: 1,
+            },
           },
-          required: ['email', 'password']
+          required: ["email", "password"],
         },
         RegisterRequest: {
-          type: 'object',
+          type: "object",
           properties: {
             name: {
-              type: 'string',
-              description: 'User full name',
+              type: "string",
+              description: "User full name",
               minLength: 2,
-              maxLength: 50
+              maxLength: 50,
             },
             email: {
-              type: 'string',
-              format: 'email',
-              description: 'User email address'
+              type: "string",
+              format: "email",
+              description: "User email address",
             },
             password: {
-              type: 'string',
-              description: 'User password',
+              type: "string",
+              description: "User password",
               minLength: 8,
-              maxLength: 128
+              maxLength: 128,
             },
             phone: {
-              type: 'string',
-              description: 'User phone number'
-            }
+              type: "string",
+              description: "User phone number",
+            },
           },
-          required: ['name', 'email', 'password']
+          required: ["name", "email", "password"],
         },
         OTPRequest: {
-          type: 'object',
+          type: "object",
           properties: {
             email: {
-              type: 'string',
-              format: 'email',
-              description: 'Email to send OTP to'
-            }
+              type: "string",
+              format: "email",
+              description: "Email to send OTP to",
+            },
           },
-          required: ['email']
+          required: ["email"],
         },
         VerifyOTPRequest: {
-          type: 'object',
+          type: "object",
           properties: {
             email: {
-              type: 'string',
-              format: 'email',
-              description: 'Email address'
+              type: "string",
+              format: "email",
+              description: "Email address",
             },
             otp: {
-              type: 'string',
-              description: '6-digit OTP code',
+              type: "string",
+              description: "6-digit OTP code",
               minLength: 6,
-              maxLength: 6
-            }
+              maxLength: 6,
+            },
           },
-          required: ['email', 'otp']
+          required: ["email", "otp"],
         },
         ResetPasswordRequest: {
-          type: 'object',
+          type: "object",
           properties: {
             email: {
-              type: 'string',
-              format: 'email',
-              description: 'User email'
+              type: "string",
+              format: "email",
+              description: "User email",
             },
             password: {
-              type: 'string',
-              description: 'New password',
+              type: "string",
+              description: "New password",
               minLength: 8,
-              maxLength: 128
-            }
+              maxLength: 128,
+            },
           },
-          required: ['email', 'password']
+          required: ["email", "password"],
         },
         RefreshTokenRequest: {
-          type: 'object',
+          type: "object",
           properties: {
             refreshToken: {
-              type: 'string',
-              description: 'Refresh token'
-            }
+              type: "string",
+              description: "Refresh token",
+            },
           },
-          required: ['refreshToken']
+          required: ["refreshToken"],
         },
         ErrorResponse: {
-          type: 'object',
+          type: "object",
           properties: {
             success: {
-              type: 'boolean',
-              example: false
+              type: "boolean",
+              example: false,
             },
             status: {
-              type: 'number',
-              example: 400
+              type: "number",
+              example: 400,
             },
             message: {
-              type: 'string',
-              example: 'Validation failed'
+              type: "string",
+              example: "Validation failed",
             },
             errors: {
-              type: 'array',
+              type: "array",
               items: {
-                type: 'object',
+                type: "object",
                 properties: {
                   field: {
-                    type: 'string'
+                    type: "string",
                   },
                   message: {
-                    type: 'string'
-                  }
-                }
-              }
-            }
-          }
+                    type: "string",
+                  },
+                },
+              },
+            },
+          },
         },
         SuccessResponse: {
-          type: 'object',
+          type: "object",
           properties: {
             success: {
-              type: 'boolean',
-              example: true
+              type: "boolean",
+              example: true,
             },
             message: {
-              type: 'string'
+              type: "string",
             },
             data: {
-              type: 'object'
-            }
-          }
-        }
-      }
-    }
+              type: "object",
+            },
+          },
+        },
+      },
+    },
   },
-  apis: ['./app/**/*.ts', './app/**/*.js']
+  apis: ["./app/**/*.ts", "./app/**/*.js"],
 };
 
 export const specs = swaggerJsdoc(options);

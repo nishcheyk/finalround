@@ -13,34 +13,67 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useNavigate, NavLink } from "react-router-dom";
 import { toast } from "react-toastify";
-import { Visibility, VisibilityOff, Login as LoginIcon } from "@mui/icons-material";
+import {
+  Visibility,
+  VisibilityOff,
+  Login as LoginIcon,
+} from "@mui/icons-material";
 
 import { useLoginMutation } from "../services/api";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { setCredentials } from "../store/reducers/authReducer";
-import LoadingSpinner from "./LoadingSpinner";
-import { ColorThemeSwitcher } from "./ThemeSelector";
+import { ThemeSelector } from "./ThemeSelector";
+import { withErrorHandling, withLoading } from "./hocs";
 
 const schema = yup.object({
-  email: yup.string().email("Please enter a valid email address").required("Email is required"),
+  email: yup
+    .string()
+    .email("Please enter a valid email address")
+    .required("Email is required"),
   password: yup
     .string()
     .min(8, "Password must be at least 8 characters")
     .max(128, "Password must be less than 128 characters")
-    .matches(/^(?=.*[a-z])/, "Password must contain at least one lowercase letter")
-    .matches(/^(?=.*[A-Z])/, "Password must contain at least one uppercase letter")
+    .matches(
+      /^(?=.*[a-z])/,
+      "Password must contain at least one lowercase letter"
+    )
+    .matches(
+      /^(?=.*[A-Z])/,
+      "Password must contain at least one uppercase letter"
+    )
     .matches(/^(?=.*\d)/, "Password must contain at least one number")
-    .matches(/^(?=.*[@$!%*?&])/, "Password must contain at least one special character")
+    .matches(
+      /^(?=.*[@$!%*?&])/,
+      "Password must contain at least one special character"
+    )
     .required("Password is required"),
 });
 
 type FormData = yup.InferType<typeof schema>;
 
-export default function LoginForm() {
+interface LoginFormProps {
+  // Props from withErrorHandling HOC
+  error?: string | null;
+  handleError: (message: string) => void;
+  clearError: () => void;
+
+  // Props from withLoading HOC
+  isLoading?: boolean;
+  setLoading: (loading: boolean) => void;
+}
+
+function LoginFormComponent({
+  error,
+  handleError,
+  clearError,
+  isLoading,
+  setLoading,
+}: LoginFormProps) {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const mode = useAppSelector((state) => state.theme.mode);
-  const [loginUser, { isLoading }] = useLoginMutation();
+  const [loginUser, { isLoading: isLoginLoading }] = useLoginMutation();
   const [showPassword, setShowPassword] = React.useState(false);
 
   const {
@@ -52,8 +85,14 @@ export default function LoginForm() {
     mode: "onChange",
   });
 
+  // Sync loading states
+  React.useEffect(() => {
+    setLoading(isLoginLoading);
+  }, [isLoginLoading, setLoading]);
+
   const onSubmit = async (data: FormData) => {
     try {
+      clearError(); // Clear any previous errors
       const result = await loginUser(data).unwrap();
       dispatch(
         setCredentials({
@@ -65,14 +104,14 @@ export default function LoginForm() {
       toast.success("User logged in successfully!");
       navigate("/", { replace: true });
     } catch (error: any) {
-      const errorMessage = error?.data?.message || error?.data?.errors?.[0]?.message || "Login failed";
+      const errorMessage =
+        error?.data?.message ||
+        error?.data?.errors?.[0]?.message ||
+        "Login failed";
+      handleError(errorMessage); // Use HOC error handling
       toast.error(errorMessage);
     }
   };
-
-  if (isLoading) {
-    return <LoadingSpinner message="Logging in..." fullScreen />;
-  }
 
   return (
     <Box
@@ -86,7 +125,7 @@ export default function LoginForm() {
     >
       {/* Theme Selector */}
       <Box position="absolute" top={16} right={16}>
-        <ColorThemeSwitcher />
+        <ThemeSelector />
       </Box>
 
       <Card
@@ -96,13 +135,23 @@ export default function LoginForm() {
           width: "100%",
           p: 4,
           borderRadius: 3,
-          boxShadow: mode === 'dark' ? 8 : 6,
+          boxShadow: mode === "dark" ? 8 : 6,
         }}
       >
-        <Typography variant="h4" fontWeight={700} gutterBottom textAlign="center">
+        <Typography
+          variant="h4"
+          fontWeight={700}
+          gutterBottom
+          textAlign="center"
+        >
           Welcome Back!
         </Typography>
-        <Typography variant="body1" mb={4} textAlign="center" color="text.secondary">
+        <Typography
+          variant="body1"
+          mb={4}
+          textAlign="center"
+          color="text.secondary"
+        >
           Sign in to continue to your account
         </Typography>
 
@@ -124,7 +173,7 @@ export default function LoginForm() {
             {...register("password")}
             fullWidth
             label="Password"
-            type={showPassword ? 'text' : 'password'}
+            type={showPassword ? "text" : "password"}
             margin="normal"
             error={!!errors.password}
             helperText={errors.password?.message}
@@ -161,11 +210,11 @@ export default function LoginForm() {
         <Box mt={3} textAlign="center">
           <Typography variant="body2" color="text.secondary">
             Don&apos;t have an account?{" "}
-            <NavLink 
-              to="/signup" 
-              style={{ 
-                color: 'inherit',
-                textDecoration: 'none',
+            <NavLink
+              to="/signup"
+              style={{
+                color: "inherit",
+                textDecoration: "none",
                 fontWeight: 600,
               }}
             >
@@ -176,9 +225,9 @@ export default function LoginForm() {
           <Typography variant="body2" mt={1}>
             <NavLink
               to="/forget-password"
-              style={{ 
-                color: 'inherit',
-                textDecoration: 'none',
+              style={{
+                color: "inherit",
+                textDecoration: "none",
                 fontWeight: 600,
               }}
             >
@@ -190,3 +239,19 @@ export default function LoginForm() {
     </Box>
   );
 }
+
+// Apply HOCs to enhance the component
+const LoginForm = withErrorHandling(
+  withLoading(LoginFormComponent, {
+    fullScreen: false,
+    showSpinner: false,
+    message: "Logging in...",
+  }),
+  {
+    showErrorBoundary: true,
+    position: "top",
+    autoHideDuration: 5000,
+  }
+);
+
+export default LoginForm;

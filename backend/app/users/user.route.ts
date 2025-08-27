@@ -5,6 +5,7 @@ import {
   refreshTokenController,
   logoutController,
   resetPasswordController,
+  getAllUsersController,
 } from "./users.controller";
 
 import {
@@ -28,17 +29,34 @@ import {
 
 const router = Router();
 
-router.post("/register", registerLimiter, validate(registerValidation), registerController);
+router.post(
+  "/register",
+  registerLimiter,
+  validate(registerValidation),
+  registerController,
+);
 router.post("/login", loginLimiter, validate(loginValidation), loginController);
-router.post("/refresh-token", refreshLimiter, validate(refreshTokenValidation), refreshTokenController);
-router.post("/logout", authenticator(), logoutLimiter, validate(logoutValidation), logoutController);
+router.post(
+  "/refresh-token",
+  refreshLimiter,
+  validate(refreshTokenValidation),
+  refreshTokenController,
+);
+router.post(
+  "/logout",
+  authenticator(),
+  logoutLimiter,
+  validate(logoutValidation),
+  logoutController,
+);
 
 router.post(
   "/reset-password",
   resetPasswordLimiter,
   otpVerificationRequired,
   validate(resetPasswordValidation),
-  resetPasswordController
+  resetPasswordController,
 );
 
+router.get("/", authenticator(true), getAllUsersController);
 export default router;

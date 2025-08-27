@@ -9,6 +9,8 @@ function generateOtp(): string {
   let otp: string;
   do {
     otp = crypto.randomInt(0, 999999).toString().padStart(6, "0");
+    /* This code snippet is defining a Mongoose schema for an OTP (One-Time Password) document in a MongoDB
+database. Let's break down what each part of the schema is doing: */
   } while (otp.startsWith("0"));
   return otp;
 }
@@ -29,7 +31,7 @@ export async function generateAndSendOTP(email: string): Promise<string> {
       (Date.now() - existing.lastSentAt.getTime()) / 1000;
     if (secondsSinceLast < RESEND_WAIT_SECONDS) {
       throw new Error(
-        `Wait ${Math.ceil(RESEND_WAIT_SECONDS - secondsSinceLast)} seconds before resending OTP`
+        `Wait ${Math.ceil(RESEND_WAIT_SECONDS - secondsSinceLast)} seconds before resending OTP`,
       );
     }
   }
@@ -46,7 +48,7 @@ export async function generateAndSendOTP(email: string): Promise<string> {
       attempts: 0,
       lastSentAt: new Date(),
     },
-    { upsert: true, new: true }
+    { upsert: true, new: true },
   );
 
   return otp;
@@ -57,7 +59,7 @@ export async function generateAndSendOTP(email: string): Promise<string> {
  */
 export async function verifyOTP(
   email: string,
-  otp: string
+  otp: string,
 ): Promise<{ valid: boolean; reason?: string }> {
   const otpRecord = await OTPModel.findOne({ email });
 

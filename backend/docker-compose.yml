@@ -5,14 +5,14 @@ services:
     build: .
     container_name: eventbook_app
     ports:
-      - "3000:3000"          # Map container port 3000 to localhost:3000
+      - "3000:3000" # Map container port 3000 to localhost:3000
     environment:
       - NODE_ENV=development
       - MONGO_URL=mongodb://mongo:27017/eventbook_db
     depends_on:
       - mongo
     volumes:
-      - .:/usr/src/app      # Mount current directory for hot code reload (optional)
+      - .:/usr/src/app # Mount current directory for hot code reload (optional)
 
   mongo:
     image: mongo:6.0

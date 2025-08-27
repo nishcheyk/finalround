@@ -14,7 +14,7 @@ interface JwtPayload {
 export const adminOnly = (
   req: Request & { user?: JwtPayload },
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   if (!req.user) {
     return next(createHttpError(401, "Unauthorized"));
