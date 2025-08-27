@@ -1,3 +1,6 @@
 {
-  "docwriter.style": "JSDoc"
+  "docwriter.style": "JSDoc",
+  "yaml.schemas": {
+    "https://www.artillery.io/schema.json": []
+  }
 }

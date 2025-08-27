@@ -22,20 +22,20 @@ export default function ForgetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
- /**
-  * The functions handleNext and handleBack are used to navigate between steps in a multi-step process,
-  * ensuring the step index stays within the valid range.
-  */
+  /**
+   * The functions handleNext and handleBack are used to navigate between steps in a multi-step process,
+   * ensuring the step index stays within the valid range.
+   */
   const handleNext = () =>
     setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
   const handleBack = () => setActiveStep((prev) => Math.max(prev - 1, 0));
 
- /**
-  * The function onRequestOtpNext sets the email and then calls the handleNext function.
-  * @param {string} email - The `onRequestOtpNext` function takes an `email` parameter of type string.
-  * When this function is called, it sets the email using the `setEmail` function and then calls the
-  * `handleNext` function.
-  */
+  /**
+   * The function onRequestOtpNext sets the email and then calls the handleNext function.
+   * @param {string} email - The `onRequestOtpNext` function takes an `email` parameter of type string.
+   * When this function is called, it sets the email using the `setEmail` function and then calls the
+   * `handleNext` function.
+   */
   const onRequestOtpNext = (email: string) => {
     setEmail(email);
     handleNext();
@@ -48,9 +48,9 @@ export default function ForgetPasswordPage() {
     handleNext();
   };
 
- /**
-  * The function `handleBackToLogin` navigates the user back to the login page.
-  */
+  /**
+   * The function `handleBackToLogin` navigates the user back to the login page.
+   */
   const handleBackToLogin = () => {
     navigate("/login");
   };
@@ -105,11 +105,7 @@ export default function ForgetPasswordPage() {
               Back
             </Button>
 
-            <Button
-              onClick={handleBackToLogin}
-              variant="text"
-              color="primary"
-            >
+            <Button onClick={handleBackToLogin} variant="text" color="primary">
               Back to Login
             </Button>
 

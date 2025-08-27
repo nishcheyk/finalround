@@ -29,7 +29,7 @@ export default function VerifyOtpForm({
   const [verifyOtp, { isLoading }] = useVerifyOtpMutation();
   const [error, setError] = useState<string | null>(null);
   const [attempts, setAttempts] = useState(0);
-  
+
   const {
     register,
     handleSubmit,
@@ -38,12 +38,12 @@ export default function VerifyOtpForm({
     resolver: yupResolver(schema),
   });
 
- /**
-  * The onSubmit function handles OTP verification and displays success or error messages accordingly.
-  * @param {FormData} data - The `data` parameter in the `onSubmit` function is of type `FormData`. It
-  * likely contains information submitted by the user, such as the OTP (One-Time Password) entered in a
-  * form.
-  */
+  /**
+   * The onSubmit function handles OTP verification and displays success or error messages accordingly.
+   * @param {FormData} data - The `data` parameter in the `onSubmit` function is of type `FormData`. It
+   * likely contains information submitted by the user, such as the OTP (One-Time Password) entered in a
+   * form.
+   */
   const onSubmit = async (data: FormData) => {
     try {
       setError(null);
@@ -53,7 +53,7 @@ export default function VerifyOtpForm({
     } catch (error: any) {
       const errorMessage = error?.data?.message || "Invalid or expired OTP";
       setError(errorMessage);
-      setAttempts(prev => prev + 1);
+      setAttempts((prev) => prev + 1);
       toast.error(errorMessage);
     }
   };
@@ -65,12 +65,16 @@ export default function VerifyOtpForm({
           {error}
         </Alert>
       )}
-      
+
       <Typography variant="body2" color="text.secondary" mb={2}>
         Enter the 6-digit OTP sent to <strong>{email}</strong>
       </Typography>
-      
-      <form className={styles.form} onSubmit={handleSubmit(onSubmit)} noValidate>
+
+      <form
+        className={styles.form}
+        onSubmit={handleSubmit(onSubmit)}
+        noValidate
+      >
         <TextField
           {...register("otp")}
           label="Enter OTP"
@@ -81,7 +85,7 @@ export default function VerifyOtpForm({
           inputProps={{ maxLength: 6 }}
           autoFocus
         />
-        
+
         <Button
           type="submit"
           variant="contained"
@@ -92,9 +96,14 @@ export default function VerifyOtpForm({
         >
           {isLoading ? "Verifying OTP..." : "Verify OTP"}
         </Button>
-        
+
         {attempts > 0 && (
-          <Typography variant="body2" color="text.secondary" textAlign="center" mt={1}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            textAlign="center"
+            mt={1}
+          >
             Attempts: {attempts}/5
           </Typography>
         )}
