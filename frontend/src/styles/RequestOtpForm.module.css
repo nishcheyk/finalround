@@ -1,0 +1,19 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 420px;
+  margin: auto;
+}
+
+.errorText {
+  color: #f44336;
+  font-size: 0.875rem;
+  margin-top: -12px;
+  margin-bottom: 12px;
+}
+
+.submitButton {
+  margin-top: 8px;
+  border-radius: 8px;
+}

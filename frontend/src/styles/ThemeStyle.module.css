@@ -1,0 +1,47 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 16px;
+  background-color: white;
+  color: black;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.button:hover {
+  background-color: #f3f3f3;
+}
+
+.button:focus-visible {
+  outline: 2px solid #1d4ed8; /* Blue ring */
+  outline-offset: 2px;
+}
+
+.dark .button {
+  background-color: #121212;
+  color: white;
+  border-color: #333;
+}
+
+.dark .button:hover {
+  background-color: #1d1d1d;
+}
+
+.icon {
+  margin-left: 8px;
+  width: 16px;
+  height: 16px;
+  transition: transform 0.3s ease;
+}
+
+.iconOpen {
+  transform: rotate(180deg);
+}

@@ -1,0 +1,44 @@
+import { Router } from "express";
+import {
+  registerController,
+  loginController,
+  refreshTokenController,
+  logoutController,
+  resetPasswordController,
+} from "./users.controller";
+
+import {
+  loginLimiter,
+  registerLimiter,
+  refreshLimiter,
+  logoutLimiter,
+  resetPasswordLimiter,
+} from "../common/middlewares/rateLimiters";
+
+import { authenticator } from "../common/middlewares/auth.middleware";
+import { otpVerificationRequired } from "../common/middlewares/otpVerification.middleware";
+import {
+  validate,
+  registerValidation,
+  loginValidation,
+  resetPasswordValidation,
+  refreshTokenValidation,
+  logoutValidation,
+} from "../common/middlewares/validation.middleware";
+
+const router = Router();
+
+router.post("/register", registerLimiter, validate(registerValidation), registerController);
+router.post("/login", loginLimiter, validate(loginValidation), loginController);
+router.post("/refresh-token", refreshLimiter, validate(refreshTokenValidation), refreshTokenController);
+router.post("/logout", authenticator(), logoutLimiter, validate(logoutValidation), logoutController);
+
+router.post(
+  "/reset-password",
+  resetPasswordLimiter,
+  otpVerificationRequired,
+  validate(resetPasswordValidation),
+  resetPasswordController
+);
+
+export default router;
