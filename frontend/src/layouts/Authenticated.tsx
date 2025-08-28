@@ -62,7 +62,6 @@ export default function AuthenticatedLayout() {
       dispatch(resetCredentials());
       navigate("/login", { replace: true });
     } catch (e) {
-      console.error("Logout failed", e);
       dispatch(resetCredentials());
       navigate("/login", { replace: true });
     }
@@ -80,6 +79,7 @@ export default function AuthenticatedLayout() {
     setAnchorEl(event.currentTarget);
   }
 
+  // Drawer content for mobile
   const drawerList = (
     <Box
       role="presentation"
@@ -124,7 +124,7 @@ export default function AuthenticatedLayout() {
         </ListItem>
 
         <ListItem disablePadding>
-          <ListItemButton component={RouterLink} to="/">
+          <ListItemButton component={RouterLink} to="/book">
             <ListItemIcon>
               <PersonIcon />
             </ListItemIcon>
@@ -210,7 +210,13 @@ export default function AuthenticatedLayout() {
   return (
     <>
       <AppBar position="static" color="primary">
-        <Toolbar sx={{ justifyContent: "space-between" }}>
+        <Toolbar
+          sx={{
+            justifyContent: "space-between",
+            minHeight: { xs: 80, sm: 150, md: 130 }, // responsive heights for different breakpoints
+            px: 5,
+          }}
+        >
           {/* Left side hamburger menu on mobile */}
           {isMobile ? (
             <IconButton
@@ -259,7 +265,8 @@ export default function AuthenticatedLayout() {
               gap: 4,
               justifyContent: "center",
               flexGrow: 1,
-              maxWidth: 400,
+              maxWidth: 600,
+              flexWrap: "wrap",
             }}
           >
             {["/book", "/my-appointments"].map((path, index) => {
@@ -284,27 +291,55 @@ export default function AuthenticatedLayout() {
                         ? "secondary.dark"
                         : "rgba(255,255,255,0.1)",
                     },
+                    whiteSpace: "nowrap",
+                    minWidth: 108,
+                    borderRadius: 2,
                   })}
                 >
                   {label}
                 </Button>
               );
             })}
+
+            {/* Admin Panel Button */}
+            {user?.isAdmin && (
+              <Button
+                component={NavLink}
+                to="/admin"
+                color="inherit"
+                variant="outlined"
+                size="large"
+                sx={({ isActive }) => ({
+                  fontWeight: "bold",
+                  letterSpacing: 0.5,
+                  backgroundColor: isActive ? "secondary.main" : "transparent",
+                  color: isActive ? "white" : "inherit",
+                  "&:hover": {
+                    backgroundColor: isActive
+                      ? "secondary.dark"
+                      : "rgba(255,255,255,0.1)",
+                  },
+                  whiteSpace: "nowrap",
+                  minWidth: 130,
+                  borderRadius: 2,
+                })}
+              >
+                Admin Panel
+              </Button>
+            )}
           </Box>
 
           {/* Right side user profile, theme switcher, notifications */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <ColorThemeSwitcher />
             <NotificationDropdown />
-            {!isMobile && (
+            {!isMobile && user && (
               <>
-                <Tooltip
-                  title={`${user?.name || "User"} (${user?.email || ""})`}
-                >
+                <Tooltip title={`${user.name} (${user.email})`}>
                   <IconButton
                     edge="end"
                     aria-label="account of current user"
-                    aria-controls={menuId}
+                    aria-controls="primary-account-menu"
                     aria-haspopup="true"
                     aria-expanded={Boolean(anchorEl)}
                     onClick={handleMenuOpen}
@@ -314,12 +349,13 @@ export default function AuthenticatedLayout() {
                     <Avatar
                       sx={{ width: 32, height: 32, bgcolor: "primary.main" }}
                     >
-                      {user?.name?.charAt(0)?.toUpperCase() || "U"}
+                      {user.name.charAt(0).toUpperCase()}
                     </Avatar>
                   </IconButton>
                 </Tooltip>
+
                 <Menu
-                  id={menuId}
+                  id="primary-account-menu"
                   anchorEl={anchorEl}
                   open={Boolean(anchorEl)}
                   onClose={handleMenuClose}
@@ -338,10 +374,10 @@ export default function AuthenticatedLayout() {
                 >
                   <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
                     <Typography variant="subtitle2" fontWeight="bold">
-                      {user?.name || "User"}
+                      {user.name}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {user?.email}
+                      {user.email}
                     </Typography>
                   </Box>
                   <MenuItem
@@ -361,18 +397,16 @@ export default function AuthenticatedLayout() {
                     Settings
                   </MenuItem>
 
-                  {user?.isAdmin && (
-                    <MenuItem
-                      component={Link}
-                      to="/admin"
-                      onClick={handleMenuClose}
-                    >
-                      <AdminPanelSettingsIcon sx={{ mr: 2 }} />
-                      Admin Panel
-                    </MenuItem>
-                  )}
-                  {user?.isAdmin && (
+                  {user.isAdmin && (
                     <>
+                      <MenuItem
+                        component={Link}
+                        to="/admin"
+                        onClick={handleMenuClose}
+                      >
+                        <AdminPanelSettingsIcon sx={{ mr: 2 }} />
+                        Admin Panel
+                      </MenuItem>
                       <MenuItem
                         component={Link}
                         to="/admin/notifications"

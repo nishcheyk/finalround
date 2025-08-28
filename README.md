@@ -1,54 +1,159 @@
 # Booking App – Full Stack Assessment
 
-## Overview
-A robust, production-ready booking system with:
-- **Admin, Staff, and Customer separation**
-- **Notifications via Email, SMS, and In-App**
-- **Appointment booking, rescheduling, and management**
-- **Secure authentication and role-based access**
-- **Modern, elegant frontend (React + MUI + RTK Query)**
-- **Scalable backend (Node.js + Express + MongoDB + Bull Queue + Redis)**
+## Features
+
+- **Theme Selection & System Theme Sync:**
+  - Users can switch between light, dark, and system themes using the ThemeSelector component.
+  - The app detects the user's OS/system theme preference and applies it automatically if 'system' is selected.
+  - Theme changes are instant and global, affecting all UI components (MUI + Tailwind).
+  - Theme preference is stored in Redux and persists across sessions.
+  - Includes beautiful transitions and accessibility support.
+
+- **Role-Based Access:** Separate flows and permissions for Admin, Staff, and Customer. Admins manage everything, staff manage their own appointments, customers book/manage their own.
+- **3-Way Notification System:** Every important action (booking, reschedule, admin message) triggers notifications via:
+  - **In-App:** Real-time, with unread/read tracking and dropdown UI.
+  - **Email:** Sent via SMTP, customizable templates.
+  - **SMS:** Sent via Twilio, instant delivery.
+- **Appointment Booking & Rescheduling:**
+  - Customers can book, view, and reschedule appointments.
+  - Staff can see/manage their own schedule.
+  - Double-booking is prevented by unique indexes.
+- **Admin Dashboard:**
+  - Manage users, staff, services, appointments, and notifications.
+  - Send global or targeted notifications (in-app, email, SMS).
+  - View notification stats and read/unread status.
+- **Security:**
+  - JWT authentication, role-based middleware, OTP for sensitive actions, rate limiting, CORS, and input validation.
+- **Modern Frontend:**
+  - React + MUI + Tailwind + RTK Query for a responsive, elegant UI.
+  - Card-based appointment display, dropdown time selection, skeleton loaders, and notification dropdown.
+- **Scalable Backend:**
+  - Node.js, Express, MongoDB, Bull Queue, Redis for async jobs and reliability.
+- **API Documentation:**
+  - Swagger UI at `/api-docs` for interactive API exploration.
+- **Environment Config:**
+  - All secrets and service credentials are managed via `.env`.
 
 ---
 
-## Features
+## Table of Contents
+
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Features](#features)
+- [Backend Deep Dive](#backend-deep-dive)
+- [Frontend Deep Dive](#frontend-deep-dive)
+- [Notification System (3-Way)](#notification-system-3-way)
+- [Booking & Appointment Flow](#booking--appointment-flow)
+- [Security & Middleware](#security--middleware)
+- [Database Handling](#database-handling)
+- [API Reference](#api-reference)
+- [Frontend Auth & Security](#frontend-auth--security)
+- [Admin Powers](#admin-powers)
+- [Environment Variables](#environment-variables-env)
+- [Setup & Running](#setup--running)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
+
+## Overview
+
+This is a robust, production-grade event/appointment booking platform with a focus on reliability, security, and user experience. It supports:
+
+- Role-based access for admins, staff, and customers
+- 3-way notifications (in-app, email, SMS)
+- Modern frontend and scalable backend
+- Secure authentication and data handling
+
+---
+
+## Architecture
+
+**Monorepo** with clear separation:
+
+- `/backend`: Node.js, Express, TypeScript, MongoDB, Bull, Redis
+- `/frontend`: React, TypeScript, Vite, MUI, Tailwind, RTK Query
+- `/images`: Screenshots, diagrams
+
+**Notification Flow:**
+
+1. **Trigger**: Booking, reschedule, admin notification, etc.
+2. **Enqueue**: Job added to Bull queue (email, SMS, in-app)
+3. **Process**: Queue processor (separate process) sends email (SMTP), SMS (Twilio), and in-app notification (MongoDB)
+4. **Delivery**: User receives notification in-app, via email, and via SMS
+
+**Security:**
+
+- JWT authentication, role-based middleware, validation, rate limiting, CORS
+
+---
+
+---
 
 ### 1. User Roles & Permissions
-- **Admin**: Full control. Can manage users, staff, services, appointments, and view all notifications.
+
+- **Admin**: Full control. Can manage users, staff, services, appointments, notifications, and view stats.
 - **Staff**: Can view/manage their own appointments, receive notifications.
 - **Customer**: Can book, view, and manage their own appointments, receive notifications.
 
+### 1. User Roles & Permissions
+
 ### 2. Notification System (3-Way)
-- **In-App Notification**: Delivered to user dashboard (real-time, unread/read tracking).
+
+- **In-App Notification**: Real-time, unread/read tracking, delivered to dashboard.
 - **Email Notification**: Sent via SMTP (configurable in `.env`).
 - **SMS Notification**: Sent via Twilio (configurable in `.env`).
 - **All notifications are queued and processed reliably using Bull and Redis.**
 
+### 2. Notification System (3-Way)
+
 #### Example: Appointment Booking
-- When a customer books or reschedules an appointment:
-  - **Customer and Staff** both receive:
-    - In-app notification
-    - Email
-    - SMS
+
+When a customer books or reschedules an appointment:
+
+- **Customer and Staff** both receive:
+  - In-app notification
+  - Email
+  - SMS
 - Admin can view all notifications and stats.
 
 ---
 
-## Backend
+- When a customer books or reschedules an appointment:
+
+---
+
+## Backend Deep Dive
+
+- **Customer and Staff** both receive:
 
 ### Tech Stack
+
+- Node.js, Express, TypeScript
+- MongoDB (Mongoose ODM)
+- Bull Queue + Redis (for async jobs)
+- Nodemailer (Email), Twilio (SMS)
+
+### Key Modules & Structure
+
+- `users/` – User schema, role management, authentication, admin powers
+- `appointment/` – Appointment schema, booking, rescheduling, reminders, double-booking prevention
+- `notifications/` – Notification schema, service, controller, queue logic, read/unread tracking
+- `common/services/` – Email, SMS, queue processors, helpers, validation
+
+### Tech Stack
+
 - Node.js, Express, TypeScript
 - MongoDB (Mongoose ODM)
 - Bull Queue + Redis (for async jobs)
 - Nodemailer (Email), Twilio (SMS)
 
 ### Key Modules
+
 - `users/` – User schema, role management, authentication
 - `appointment/` – Appointment schema, booking, rescheduling, reminders
-- `notifications/` – Notification schema, service, controller, queue logic
-- `common/services/` – Email, SMS, queue processors, helpers
 
 ### Notification Flow (Code Snippet)
+
 ```ts
 // Enqueue notification (in notification.service.ts or appointment.service.ts)
 notificationQueue.add("sendNotificationEmail", { ... });
@@ -56,59 +161,130 @@ notificationQueue.add("sendNotificationSMS", { ... });
 // In queueProcessors.ts
 notificationQueue.process("sendNotificationEmail", async (job) => sendEmail(job.data));
 notificationQueue.process("sendNotificationSMS", async (job) => sendSMS(job.data.to, job.data.body));
+// In-app notification is created in MongoDB and delivered via API
 ```
 
-### Appointment Booking Flow
+- `notifications/` – Notification schema, service, controller, queue logic
+
+---
+
+## Booking & Appointment Flow
+
 - **POST /appointments**: Authenticated users can book an appointment.
 - **POST /appointments/availability**: Get available slots for staff/service/date.
 - **PATCH /appointments/:id/reschedule**: Reschedule an appointment (with notification to all parties).
 - **All actions trigger notifications (in-app, email, SMS) to relevant users.**
 
-### Security & Middleware
+**Booking Logic:**
+
+1. User selects staff, service, and time slot (frontend fetches available slots, disables booked ones)
+2. Backend checks for double booking (unique index on staff+startTime)
+3. Appointment is created, triggers notification jobs for both staff and customer
+4. Reminders are scheduled (24h before appointment)
+5. All notifications are delivered via queue processor
+
+// Enqueue notification (in notification.service.ts or appointment.service.ts)
+
+---
+
+## Security & Middleware
+
 - **JWT Authentication**: All protected routes require a valid JWT.
 - **Role Middleware**: Restricts access to admin/staff/customer endpoints.
 - **Validation Middleware**: Validates request bodies (using Joi/Zod or custom logic).
+- **OTP Middleware**: For sensitive actions (password reset, etc.)
 - **Rate Limiting**: Prevents brute-force and abuse (configurable).
 - **CORS**: Configured for secure frontend-backend communication.
+- **Error Handling**: Consistent error structure, prevents server crashes.
+- **Request Logging**: For debugging and monitoring.
 
-### Database Handling
+---
+
+## Database Handling
+
 - **Mongoose Schemas**: Strict typing, validation, and indexing (e.g., unique appointment slots).
 - **Transactions**: Used for critical multi-step operations.
 - **Lean Queries**: Used for performance where possible.
+- **Population**: Used for user, staff, and service references.
+- **Sanitization**: All user and appointment data is validated and sanitized.
+
+- **POST /appointments/availability**: Get available slots for staff/service/date.
+
+---
+
+## Frontend Deep Dive
+
+- **PATCH /appointments/:id/reschedule**: Reschedule an appointment (with notification to all parties).
+
+### Tech Stack
+
+- React + TypeScript
+- MUI (Material UI)
+- RTK Query (Redux Toolkit Query) for API calls
+- Framer Motion for animation
+- Tailwind CSS for utility-first styling
+
+- **Role Middleware**: Restricts access to admin/staff/customer endpoints.
+
+### Auth & Security
+
+- **JWT stored in HttpOnly cookies** (recommended) or localStorage.
+- **Protected Routes**: React Router guards based on auth/role.
+- **Error Boundaries**: For robust error handling.
+- **Role-based UI**: Admin/staff/customer see only their allowed actions.
+
+### Booking UI
+
+- **Modern, card-based appointment display**
+- **Dropdown for time selection, skeleton loaders, responsive design**
+- **Notification dropdown with unread count**
+- **Admin dashboard for managing users, staff, services, and appointments**
+- **ReadStatusDialog**: Shows who read each notification
 
 ---
 
 ## Frontend
 
 ### Tech Stack
+
 - React + TypeScript
 - MUI (Material UI)
+
+### Example: Booking Flow (Frontend)
+
+```
+// Book appointment (RTK Query)
+const [bookAppointment] = useBookAppointmentMutation();
+const handleBook = () => bookAppointment({ staffId, serviceId, startTime });
+// Notification dropdown
+<NotificationDropdown />;
+// Mark notification as read
+const [markAsRead] = useMarkNotificationAsReadMutation();
+markAsRead(notificationId);
+```
+
 - RTK Query (Redux Toolkit Query) for API calls
 - Framer Motion for animation
 
 ### Auth & Security
+
 - **JWT stored in HttpOnly cookies** (recommended) or localStorage.
 - **Protected Routes**: React Router guards based on auth/role.
 - **Error Boundaries**: For robust error handling.
 
 ### Booking UI
+
 - **Modern, card-based appointment display**
 - **Dropdown for time selection, skeleton loaders, responsive design**
 - **Notification dropdown with unread count**
 - **Admin dashboard for managing users, staff, services, and appointments**
 
 ### Example: Booking Flow (Frontend)
-```tsx
-// Book appointment (RTK Query)
-const [bookAppointment] = useBookAppointmentMutation();
-const handleBook = () => bookAppointment({ staffId, serviceId, startTime });
-// Notification dropdown
-<NotificationDropdown />
-```
 
 ---
 
 ## Environment Variables (`.env`)
+
 ```env
 PORT=3000
 MONGODB_URI=mongodb://localhost:27017/booking-app
@@ -124,17 +300,102 @@ TWILIO_AUTH_TOKEN=your_twilio_auth_token
 TWILIO_PHONE=+1xxxxxxxxxx
 ```
 
+```
+// Book appointment (RTK Query)
+const [bookAppointment] = useBookAppointmentMutation();
+const handleBook = () => bookAppointment({ staffId, serviceId, startTime });
+// Notification dropdown
+```
+
 ---
 
-## How to Run
+## Setup & Running
+
 1. **Start Redis**: `redis-server`
 2. **Start Backend**: `npm run dev` (or `npx ts-node index.ts`)
 3. **Start Queue Processor**: `npx ts-node app/common/services/queueProcessors.ts`
 4. **Start Frontend**: `npm run dev` (in `frontend/`)
 
+<NotificationDropdown />
+
 ---
 
+## API Reference
+
+### Backend API Routes
+
+- `/api/auth/*` – Signup, login, password reset, OTP
+- `/api/appointments/*` – Book, reschedule, cancel, get availability
+- `/api/notifications/*` – Get, mark as read, unread count, stats
+- `/api/users/*` – User management (admin only)
+- `/api/services/*` – Service management (admin only)
+- `/api/staff/*` – Staff management (admin only)
+
+PORT=3000
+
+---
+
+## Middleware (Backend)
+
+- **authMiddleware**: Checks JWT, attaches user to request
+- **roleMiddleware**: Checks user role (admin/staff/customer)
+- **validationMiddleware**: Validates request body/query/params
+- **otpMiddleware**: Verifies OTP for sensitive actions
+- **errorHandler**: Catches and formats errors
+
+SMTP_PORT=587
+
+---
+
+## Security
+
+- **All sensitive actions require authentication and correct role**
+- **Passwords are hashed (bcrypt)**
+- **JWTs are signed and verified**
+- **Rate limiting and CORS are enabled**
+- **Validation and sanitization on all user input**
+
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+
+---
+
+## Data Handling
+
+- **All user and appointment data is validated and sanitized**
+- **Unique indexes prevent double booking**
+- **Lean queries and population for performance**
+- **Transactions for multi-step operations**
+
+---
+
+---
+
+## Admin Powers
+
+- **Admins can manage all users, staff, services, and appointments**
+- **Admins can send global notifications (in-app, email, SMS) to all users**
+- **Admins can view notification stats and logs**
+- **Admins can see read/unread status for every notification**
+- **Admins can delete notifications and users**
+
+2. **Start Backend**: `npm run dev` (or `npx ts-node index.ts`)
+
+## Troubleshooting
+
+- **No email/SMS?** Ensure `.env` is loaded and queue processor is running
+- **Redis errors?** Make sure Redis is running and accessible
+- **Role errors?** Check user roles and JWTs
+- **Double booking?** Unique index on staff+startTime prevents it
+- **Not seeing notifications?** Check queue processor logs and MongoDB
+
+---
+
+## License
+
+MIT
+
 ## API Routes (Backend)
+
 - `/api/auth/*` – Signup, login, password reset, OTP
 - `/api/appointments/*` – Book, reschedule, cancel, get availability
 - `/api/notifications/*` – Get, mark as read, unread count, stats
@@ -145,6 +406,7 @@ TWILIO_PHONE=+1xxxxxxxxxx
 ---
 
 ## Middleware (Backend)
+
 - **authMiddleware**: Checks JWT, attaches user to request
 - **roleMiddleware**: Checks user role (admin/staff/customer)
 - **validationMiddleware**: Validates request body/query/params
@@ -153,6 +415,7 @@ TWILIO_PHONE=+1xxxxxxxxxx
 ---
 
 ## Security
+
 - **All sensitive actions require authentication and correct role**
 - **Passwords are hashed (bcrypt)**
 - **JWTs are signed and verified**
@@ -161,6 +424,7 @@ TWILIO_PHONE=+1xxxxxxxxxx
 ---
 
 ## Data Handling
+
 - **All user and appointment data is validated and sanitized**
 - **Unique indexes prevent double booking**
 - **Lean queries and population for performance**
@@ -168,6 +432,7 @@ TWILIO_PHONE=+1xxxxxxxxxx
 ---
 
 ## Admin Powers
+
 - **Admins can manage all users, staff, services, and appointments**
 - **Admins can send global notifications (in-app, email, SMS) to all users**
 - **Admins can view notification stats and logs**
@@ -175,6 +440,7 @@ TWILIO_PHONE=+1xxxxxxxxxx
 ---
 
 ## Troubleshooting
+
 - **No email/SMS?** Ensure `.env` is loaded and queue processor is running
 - **Redis errors?** Make sure Redis is running and accessible
 - **Role errors?** Check user roles and JWTs
@@ -182,6 +448,7 @@ TWILIO_PHONE=+1xxxxxxxxxx
 ---
 
 ## License
+
 MIT# Full Stack Event Booking & Notification Platform
 
 ## Table of Contents
@@ -293,36 +560,36 @@ All middleware is modularized in `/backend/app/common/middlewares/` and applied 
 - **index.ts**: Entry point, sets up Express app, connects to MongoDB, applies middleware, and mounts routes.
 - **docker-compose.yml / Dockerfile**: For containerized deployment.
 - **swagger.ts / swagger.json**: Swagger API documentation setup.
-- **app/**: Main application code.
+- **app/ **: Main application code.
   - **routes.ts**: Combines all route modules (`/users`, `/otp`, `/notifications`).
-  - **common/**: Shared logic.
-    - **dto/**: Data transfer objects (request/response schemas).
-    - **helper/**: Utility functions (e.g., email, SMS helpers).
-    - **middlewares/**: Auth, validation, error handling, OTP verification, rate limiting.
-    - **services/**: Shared business logic (e.g., mail, SMS, queue).
-  - **notifications/**: Notification system.
+  - **common/ **: Shared logic.
+    - **dto/ **: Data transfer objects (request/response schemas).
+    - **helper/ **: Utility functions (e.g., email, SMS helpers).
+    - **middlewares/ **: Auth, validation, error handling, OTP verification, rate limiting.
+    - **services/ **: Shared business logic (e.g., mail, SMS, queue).
+  - **notifications/ **: Notification system.
     - **notification.controller.ts**: Handles notification API requests (create, list, mark as read, stats, etc).
     - **notification.route.ts**: Express router for notification endpoints.
     - **notification.schema.ts**: Mongoose schema/model for notifications.
     - **notification.service.ts**: Business logic for notifications.
-  - **otp/**: OTP system (controller, route, schema, service for OTP generation/verification).
-  - **users/**: User management (controller, route, schema, service for registration, login, etc).
-  - **types/**: TypeScript type definitions for Express and app-wide types.
+  - **otp/ **: OTP system (controller, route, schema, service for OTP generation/verification).
+  - **users/ **: User management (controller, route, schema, service for registration, login, etc).
+  - **types/ **: TypeScript type definitions for Express and app-wide types.
 
 ### Frontend (`/frontend`)
 
-- **src/**: Main source code.
+- **src/ **: Main source code.
   - **App.tsx**: Main app component, sets up routes and layouts.
   - **main.tsx**: Entry point, sets up Redux, theme, router, and renders the app.
-  - **components/**: Reusable UI components (forms, dialogs, notification dropdown, theme selector, etc).
-    - **hocs/**: Higher-order components for auth/role protection.
-    - **ui/**: UI primitives and wrappers.
-  - **layouts/**: Layout wrappers (Authenticated, Basic).
-  - **pages/**: Page-level components (AdminNotifications, Home, Login, Register, etc).
-  - **services/**: API logic (RTK Query endpoints for backend APIs).
-  - **store/**: Redux slices (auth, theme, etc) and hooks.
-  - **styles/**: CSS/Tailwind styles.
-  - **types/**: TypeScript types for notifications, users, etc.
+  - **components/ **: Reusable UI components (forms, dialogs, notification dropdown, theme selector, etc).
+    - **hocs/ **: Higher-order components for auth/role protection.
+    - **ui/ **: UI primitives and wrappers.
+  - **layouts / **: Layout wrappers (Authenticated, Basic).
+  - **pages/ **: Page-level components (AdminNotifications, Home, Login, Register, etc).
+  - **services/ **: API logic (RTK Query endpoints for backend APIs).
+  - **store/ **: Redux slices (auth, theme, etc) and hooks.
+  - **styles/ **: CSS/Tailwind styles.
+  - **types/ **: TypeScript types for notifications, users, etc.
   - **themes.ts / theme.d.ts**: MUI theme setup and type augmentation.
 
 ---
@@ -595,3 +862,7 @@ A robust, scalable full-stack application for event booking and real-time notifi
 ## Contact
 
 For questions or support, open an issue or contact the maintainer. github: nishcheyk
+
+```
+
+```

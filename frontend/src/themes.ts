@@ -10,7 +10,7 @@ import {
 } from "@mui/material/colors";
 
 const getTheme = (mode: "light" | "dark" | "system") => {
-  // Resolve system theme to light/dark
+  // Resolve system mode to light or dark
   let currentMode = mode;
   if (mode === "system" && typeof window !== "undefined" && window.matchMedia) {
     currentMode = window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -22,7 +22,7 @@ const getTheme = (mode: "light" | "dark" | "system") => {
 
   let theme = createTheme({
     palette: {
-      mode: currentMode, // only 'light' or 'dark' allowed here
+      mode: currentMode,
       primary: {
         main: isLight ? "#1976d2" : deepPurple[300],
         light: isLight ? "#42a5f5" : deepPurple[100],
@@ -46,7 +46,7 @@ const getTheme = (mode: "light" | "dark" | "system") => {
       },
       text: {
         primary: isLight ? grey[900] : "#fff",
-        secondary: isLight ? grey[900] : grey[400],
+        secondary: isLight ? grey[700] : grey[400],
       },
       divider: isLight ? blueGrey[200] : grey[600],
       action: {
@@ -57,7 +57,7 @@ const getTheme = (mode: "light" | "dark" | "system") => {
         selected: isLight
           ? "rgba(25, 118, 210, 0.14)"
           : "rgba(144, 202, 249, 0.25)",
-        disabled: isLight ? grey[400] : grey[400],
+        disabled: grey[400],
         disabledBackground: isLight ? grey[50] : grey[900],
       },
     },
@@ -98,6 +98,7 @@ const getTheme = (mode: "light" | "dark" | "system") => {
         color: isLight ? grey[600] : grey[500],
       },
     },
+    spacing: 8,
     shape: {
       borderRadius: 12,
     },
@@ -134,15 +135,14 @@ const getTheme = (mode: "light" | "dark" | "system") => {
       MuiFormHelperText: {
         styleOverrides: {
           root: {
-            color:
-              currentMode === "light" ? undefined : "rgba(255, 82, 82, 0.8)",
+            color: isLight ? undefined : "rgba(255, 82, 82, 0.8)",
           },
         },
       },
       MuiInputLabel: {
         styleOverrides: {
           root: {
-            color: currentMode === "light" ? undefined : "#bbb",
+            color: isLight ? undefined : "#bbb",
           },
         },
       },
@@ -196,7 +196,6 @@ const getTheme = (mode: "light" | "dark" | "system") => {
         },
       },
     },
-    spacing: 8,
   });
 
   return responsiveFontSizes(theme);

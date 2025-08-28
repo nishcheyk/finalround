@@ -37,18 +37,18 @@ const AdminUsers: React.FC = () => {
     id: string | null;
   }>({ open: false, id: null });
 
+  const adminUsers = data?.users?.filter((u: any) => u.role === "admin") || [];
+  const staffUsers = data?.users?.filter((u: any) => u.role === "staff") || [];
+  const customerUsers =
+    data?.users?.filter((u: any) => u.role === "user" || !u.role) || [];
+
   // Helper: is this user the last admin?
   const isLastAdmin = (userId: string) => {
     return adminUsers.length === 1 && adminUsers[0]._id === userId;
   };
 
   const handleRoleChange = async (id: string, role: string) => {
-    // Prevent demoting last admin
-    if (
-      adminUsers.length === 1 &&
-      adminUsers[0]._id === id &&
-      role !== "admin"
-    ) {
+    if (isLastAdmin(id) && role !== "admin") {
       alert("You cannot demote the last admin.");
       return;
     }
@@ -64,14 +64,8 @@ const AdminUsers: React.FC = () => {
     }
   };
 
-  // Separate users by role
-  const staffUsers = data?.users?.filter((u: any) => u.role === "staff") || [];
-  const customerUsers =
-    data?.users?.filter((u: any) => u.role === "user" || !u.role) || [];
-  const adminUsers = data?.users?.filter((u: any) => u.role === "admin") || [];
-
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3, maxWidth: 900, mx: "auto" }}>
       <Typography variant="h4" gutterBottom>
         User Management (Admin)
       </Typography>
@@ -81,18 +75,18 @@ const AdminUsers: React.FC = () => {
         <>
           {/* Admins Table */}
           {adminUsers.length > 0 && (
-            <>
-              <Typography variant="h6" sx={{ mt: 2 }}>
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h6" sx={{ mb: 1 }}>
                 Admins
               </Typography>
-              <TableContainer component={Paper} sx={{ mb: 3 }}>
+              <TableContainer component={Paper} sx={{ width: "100%" }}>
                 <Table size="small">
                   <TableHead>
                     <TableRow>
                       <TableCell>Name</TableCell>
                       <TableCell>Email</TableCell>
                       <TableCell>Role</TableCell>
-                      <TableCell>Actions</TableCell>
+                      <TableCell align="center">Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -112,6 +106,7 @@ const AdminUsers: React.FC = () => {
                               user._id === "me" ||
                               isLastAdmin(user._id)
                             }
+                            sx={{ minWidth: 100 }}
                           >
                             {ROLES.map((role) => (
                               <MenuItem
@@ -126,7 +121,7 @@ const AdminUsers: React.FC = () => {
                             ))}
                           </Select>
                         </TableCell>
-                        <TableCell>
+                        <TableCell align="center">
                           <IconButton
                             color="error"
                             onClick={() =>
@@ -137,6 +132,7 @@ const AdminUsers: React.FC = () => {
                               user._id === "me" ||
                               isLastAdmin(user._id)
                             }
+                            size="small"
                           >
                             <DeleteIcon />
                           </IconButton>
@@ -146,117 +142,128 @@ const AdminUsers: React.FC = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
-            </>
+            </Box>
           )}
 
           {/* Staff Table */}
-          <Typography variant="h6" sx={{ mt: 2 }}>
-            Staff
-          </Typography>
-          <TableContainer component={Paper} sx={{ mb: 3 }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Role</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {staffUsers.map((user: any) => (
-                  <TableRow key={user._id}>
-                    <TableCell>{user.name}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Select
-                        value={user.role || "user"}
-                        onChange={(e) =>
-                          handleRoleChange(user._id, e.target.value)
-                        }
-                        size="small"
-                        disabled={updating || user._id === "me"}
-                      >
-                        {ROLES.map((role) => (
-                          <MenuItem key={role} value={role}>
-                            {role}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <IconButton
-                        color="error"
-                        onClick={() =>
-                          setDeleteDialog({ open: true, id: user._id })
-                        }
-                        disabled={deleting || user._id === "me"}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </TableCell>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              Staff
+            </Typography>
+            <TableContainer component={Paper} sx={{ width: "100%" }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Email</TableCell>
+                    <TableCell>Role</TableCell>
+                    <TableCell align="center">Actions</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {staffUsers.map((user: any) => (
+                    <TableRow key={user._id}>
+                      <TableCell>{user.name}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <Select
+                          value={user.role || "user"}
+                          onChange={(e) =>
+                            handleRoleChange(user._id, e.target.value)
+                          }
+                          size="small"
+                          disabled={updating || user._id === "me"}
+                          sx={{ minWidth: 100 }}
+                        >
+                          {ROLES.map((role) => (
+                            <MenuItem key={role} value={role}>
+                              {role}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </TableCell>
+                      <TableCell align="center">
+                        <IconButton
+                          color="error"
+                          onClick={() =>
+                            setDeleteDialog({ open: true, id: user._id })
+                          }
+                          disabled={deleting || user._id === "me"}
+                          size="small"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
 
           {/* Customers Table */}
-          <Typography variant="h6" sx={{ mt: 2 }}>
-            Customers / Guests
-          </Typography>
-          <TableContainer component={Paper}>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Role</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {customerUsers.map((user: any) => (
-                  <TableRow key={user._id}>
-                    <TableCell>{user.name}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Select
-                        value={user.role || "user"}
-                        onChange={(e) =>
-                          handleRoleChange(user._id, e.target.value)
-                        }
-                        size="small"
-                        disabled={updating || user._id === "me"}
-                      >
-                        {ROLES.map((role) => (
-                          <MenuItem key={role} value={role}>
-                            {role}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <IconButton
-                        color="error"
-                        onClick={() =>
-                          setDeleteDialog({ open: true, id: user._id })
-                        }
-                        disabled={deleting || user._id === "me"}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </TableCell>
+          <Box>
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              Customers / Guests
+            </Typography>
+            <TableContainer component={Paper} sx={{ width: "100%" }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Email</TableCell>
+                    <TableCell>Role</TableCell>
+                    <TableCell align="center">Actions</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {customerUsers.map((user: any) => (
+                    <TableRow key={user._id}>
+                      <TableCell>{user.name}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <Select
+                          value={user.role || "user"}
+                          onChange={(e) =>
+                            handleRoleChange(user._id, e.target.value)
+                          }
+                          size="small"
+                          disabled={updating || user._id === "me"}
+                          sx={{ minWidth: 100 }}
+                        >
+                          {ROLES.map((role) => (
+                            <MenuItem key={role} value={role}>
+                              {role}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </TableCell>
+                      <TableCell align="center">
+                        <IconButton
+                          color="error"
+                          onClick={() =>
+                            setDeleteDialog({ open: true, id: user._id })
+                          }
+                          disabled={deleting || user._id === "me"}
+                          size="small"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
         </>
       )}
+
       <Dialog
         open={deleteDialog.open}
         onClose={() => setDeleteDialog({ open: false, id: null })}
+        maxWidth="xs"
+        fullWidth
       >
         <DialogTitle>Delete User</DialogTitle>
         <DialogContent>

@@ -33,14 +33,14 @@ const router = Router();
 
 router.post(
   "/register",
-
+  registerLimiter,
   validate(registerValidation),
   registerController
 );
 router.post("/login", loginLimiter, validate(loginValidation), loginController);
 router.post(
   "/refresh-token",
-
+  loginLimiter,
   validate(refreshTokenValidation),
   refreshTokenController
 );
