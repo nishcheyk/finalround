@@ -209,3 +209,36 @@ export const createAppointmentValidation = [
     .toDate()
     .withMessage("A valid startTime in ISO8601 format is required"),
 ];
+
+export const cancelAppointmentValidation = [
+  body("appointmentId")
+    .notEmpty()
+    .withMessage("Appointment ID is required")
+    .isMongoId()
+    .withMessage("Appointment ID must be a valid Mongo ID"),
+  body("userId")
+    .notEmpty()
+    .withMessage("User ID is required")
+    .isMongoId()
+    .withMessage("User ID must be a valid Mongo ID"),
+];
+
+// Validation for rescheduleAppointment request
+export const rescheduleAppointmentValidation = [
+  body("appointmentId")
+    .notEmpty()
+    .withMessage("Appointment ID is required")
+    .isMongoId()
+    .withMessage("Appointment ID must be a valid Mongo ID"),
+  body("userId")
+    .notEmpty()
+    .withMessage("User ID is required")
+    .isMongoId()
+    .withMessage("User ID must be a valid Mongo ID"),
+  body("newStartTime")
+    .notEmpty()
+    .withMessage("New start time is required")
+    .isISO8601()
+    .toDate()
+    .withMessage("New start time must be a valid ISO8601 date"),
+];

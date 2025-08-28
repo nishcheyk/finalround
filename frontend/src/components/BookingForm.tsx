@@ -1,31 +1,32 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import {
-  Alert,
-  Snackbar,
   Box,
   Button,
-  Typography,
-  Select,
-  MenuItem,
   FormControl,
   InputLabel,
+  MenuItem,
+  Select,
   CircularProgress,
-  Skeleton,
+  Typography,
+  Snackbar,
+  Alert,
 } from "@mui/material";
-import { styled } from "@mui/system";
-import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
+import { motion } from "framer-motion";
 import {
   useGetServicesQuery,
   useGetStaffQuery,
   useGetAvailabilityQuery,
   useCreateAppointmentMutation,
-  useGetUserAppointmentsQuery,
 } from "../services/api";
-import { motion } from "framer-motion";
 
-export default function AppointmentBookingPage() {
+interface BookingFormProps {
+  onBookingSuccess?: () => void;
+}
+
+export function BookingForm({ onBookingSuccess }: BookingFormProps) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedService, setSelectedService] = useState("");
   const [selectedStaff, setSelectedStaff] = useState("");
@@ -47,18 +48,12 @@ export default function AppointmentBookingPage() {
       serviceId: selectedService,
       date: selectedDate ? selectedDate.toISOString() : "",
     },
-    {
-      skip: !shouldFetchSlots,
-      refetchOnMountOrArgChange: true,
-    }
+    { skip: !shouldFetchSlots, refetchOnMountOrArgChange: true }
   );
 
   const [createAppointment, { isLoading: booking }] =
     useCreateAppointmentMutation();
-  const { data: appointmentsData, refetch: refetchAppointments } =
-    useGetUserAppointmentsQuery();
 
-  // Memoize the slot options for dropdown
   const slotOptions = useMemo(() => {
     if (!selectedDate || !selectedService || !servicesData) return [];
     const service = servicesData.data?.find(
@@ -98,21 +93,18 @@ export default function AppointmentBookingPage() {
 
   const handleBook = async () => {
     if (!selectedSlot) return;
-
     try {
       await createAppointment({
         staffId: selectedStaff,
         serviceId: selectedService,
         startTime: selectedSlot,
       }).unwrap();
-
       setSnackbar({
         open: true,
         message: "Appointment booked successfully!",
         severity: "success",
       });
       setSelectedSlot(null);
-      refetchAppointments();
     } catch (error: any) {
       setSnackbar({
         open: true,
@@ -123,7 +115,7 @@ export default function AppointmentBookingPage() {
   };
 
   return (
-    <Box sx={{ p: 3, maxWidth: 900, margin: "0 auto" }}>
+    <Box>
       <Typography variant="h4" gutterBottom>
         Book an Appointment
       </Typography>
@@ -136,7 +128,7 @@ export default function AppointmentBookingPage() {
           label="Service"
           disabled={servicesLoading}
         >
-          {servicesData?.data?.map((service) => (
+          {servicesData?.data?.map((service: any) => (
             <MenuItem key={service._id} value={service._id}>
               {service.name}
             </MenuItem>
@@ -152,7 +144,7 @@ export default function AppointmentBookingPage() {
           label="Staff"
           disabled={staffLoading}
         >
-          {staffData?.data?.map((staff) => (
+          {staffData?.data?.map((staff: any) => (
             <MenuItem key={staff._id} value={staff._id}>
               {staff.user?.name || "Staff"}
             </MenuItem>
@@ -170,9 +162,7 @@ export default function AppointmentBookingPage() {
       </LocalizationProvider>
 
       {slotsLoading && (
-        <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
-          <CircularProgress />
-        </Box>
+        <CircularProgress sx={{ display: "block", mx: "auto", my: 2 }} />
       )}
 
       {slotOptions.length > 0 && (
@@ -184,6 +174,7 @@ export default function AppointmentBookingPage() {
           <FormControl sx={{ minWidth: 220, mb: 3 }}>
             <InputLabel>Time</InputLabel>
             <Select
+              label="Time"
               value={selectedSlot ? selectedSlot.toISOString() : ""}
               onChange={(e) => {
                 const slot = slotOptions.find(
@@ -191,7 +182,6 @@ export default function AppointmentBookingPage() {
                 );
                 if (slot && !slot.booked) setSelectedSlot(slot.date);
               }}
-              label="Time"
               disabled={slotsLoading}
               renderValue={(value) => {
                 const slot = slotOptions.find((s) => s.value === value);
@@ -200,19 +190,18 @@ export default function AppointmentBookingPage() {
                   : "Select Time";
               }}
             >
-              {slotOptions.map((slot) => (
-                <MenuItem
-                  key={slot.value}
-                  value={slot.value}
-                  disabled={slot.booked}
-                >
-                  {slot.label} {slot.booked ? "(Booked)" : ""}
-                </MenuItem>
-              ))}
+              {slotOptions
+                .filter((slot) => !slot.booked) // filter out booked slots
+                .map((slot) => (
+                  <MenuItem key={slot.value} value={slot.value}>
+                    {slot.label}
+                  </MenuItem>
+                ))}
             </Select>
           </FormControl>
+
           {selectedSlot && (
-            <Box sx={{ mb: 3, textAlign: "center" }}>
+            <Box sx={{ textAlign: "center" }}>
               <Button
                 variant="contained"
                 color="primary"
@@ -222,95 +211,19 @@ export default function AppointmentBookingPage() {
               >
                 {booking
                   ? "Booking..."
-                  : `Confirm Booking for ${selectedSlot.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}`}
+                  : `Confirm Booking for ${selectedSlot.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
               </Button>
             </Box>
           )}
         </motion.div>
       )}
 
-      {slotOptions.length === 0 && (
+      {slotOptions.length === 0 && selectedDate && (
         <Typography color="text.secondary" sx={{ mt: 3 }}>
           No available slots for the selected date, staff, and service. Please
           select another date or staff.
         </Typography>
       )}
-
-      {/* Appointments as cards */}
-      <Box sx={{ mt: 5 }}>
-        <Typography variant="h5" gutterBottom>
-          Your Appointments
-        </Typography>
-        {appointmentsData?.data?.length > 0 ? (
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "1fr 1fr",
-                md: "1fr 1fr 1fr",
-              },
-              gap: 3,
-              mt: 2,
-            }}
-          >
-            {appointmentsData.data.map((appt: any) => (
-              <motion.div
-                key={appt._id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-              >
-                <Box
-                  sx={{
-                    p: 3,
-                    borderRadius: 3,
-                    boxShadow: 3,
-                    bgcolor: "background.paper",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "flex-start",
-                    minHeight: 140,
-                  }}
-                >
-                  <Typography variant="subtitle1" fontWeight="bold">
-                    {appt.service?.name}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    mb={1}
-                  ></Typography>
-                  <Typography variant="body2" mb={1}>
-                    {new Date(appt.startTime).toLocaleString()}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color={
-                      appt.status === "scheduled"
-                        ? "primary"
-                        : appt.status === "completed"
-                          ? "success.main"
-                          : appt.status === "cancelled"
-                            ? "error.main"
-                            : "warning.main"
-                    }
-                    fontWeight="bold"
-                    sx={{ mt: "auto" }}
-                  >
-                    Status: {appt.status}
-                  </Typography>
-                </Box>
-              </motion.div>
-            ))}
-          </Box>
-        ) : (
-          <Typography>No appointments found</Typography>
-        )}
-      </Box>
 
       <Snackbar
         open={snackbar.open}
@@ -319,8 +232,8 @@ export default function AppointmentBookingPage() {
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
         <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
           severity={snackbar.severity}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
           sx={{ width: "100%" }}
         >
           {snackbar.message}

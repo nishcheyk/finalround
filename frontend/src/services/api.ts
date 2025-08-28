@@ -184,19 +184,18 @@ export const api = createApi({
 
     cancelAppointment: builder.mutation<any, string>({
       query: (id) => ({
-        url: `/appointments/${id}`,
-        method: "DELETE",
+        url: `/appointments/${id}/cancel`,
+        method: "POST",
       }),
       invalidatesTags: ["Appointments"],
     }),
-
     rescheduleAppointment: builder.mutation<
       any,
       { id: string; newStartTime: Date }
     >({
       query: ({ id, newStartTime }) => ({
         url: `/appointments/${id}/reschedule`,
-        method: "PATCH",
+        method: "POST",
         body: { newStartTime },
       }),
       invalidatesTags: ["Appointments"],
@@ -308,7 +307,6 @@ export const {
 
   // Availability & Appointment
   useGetAvailabilityQuery,
-
   useCreateAppointmentMutation,
   useGetUserAppointmentsQuery,
   useCancelAppointmentMutation,

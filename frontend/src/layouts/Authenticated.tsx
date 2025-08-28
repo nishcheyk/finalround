@@ -1,32 +1,29 @@
-/* The above code is a TypeScript React component for an authenticated layout. It includes a navigation
-bar (AppBar) with various features such as user profile display, menu options, theme switcher,
-notifications dropdown, and a responsive drawer for mobile devices. */
 import React, { useState, useCallback } from "react";
 import {
   AppBar,
   Toolbar,
   IconButton,
   Typography,
+  Box,
+  Button,
+  useTheme,
+  useMediaQuery,
+  Avatar,
+  Tooltip,
   Menu,
   MenuItem,
-  Box,
-  Tooltip,
+  Divider,
   CircularProgress,
   Drawer,
   List,
   ListItem,
-  ListItemText,
-  useTheme,
-  useMediaQuery,
-  Avatar,
-  Divider,
-  Badge,
-  Chip,
   ListItemButton,
   ListItemIcon,
+  ListItemText,
 } from "@mui/material";
 import {
   Link as RouterLink,
+  NavLink,
   Link,
   Navigate,
   Outlet,
@@ -34,11 +31,10 @@ import {
 } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
 import AccountCircle from "@mui/icons-material/AccountCircle";
-import NotificationsIcon from "@mui/icons-material/Notifications";
 import SettingsIcon from "@mui/icons-material/Settings";
-import DashboardIcon from "@mui/icons-material/Dashboard";
 import PersonIcon from "@mui/icons-material/Person";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import NotificationsIcon from "@mui/icons-material/Notifications";
 
 import { useLogoutMutation } from "../services/api";
 import { useAppSelector, useAppDispatch } from "../store/hooks";
@@ -50,7 +46,6 @@ export default function AuthenticatedLayout() {
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-
   const [logoutUser, { isLoading }] = useLogoutMutation();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const theme = useTheme();
@@ -77,6 +72,14 @@ export default function AuthenticatedLayout() {
 
   const menuId = "primary-account-menu";
 
+  function handleMenuClose() {
+    setAnchorEl(null);
+  }
+
+  function handleMenuOpen(event: React.MouseEvent<HTMLElement>) {
+    setAnchorEl(event.currentTarget);
+  }
+
   const drawerList = (
     <Box
       role="presentation"
@@ -84,7 +87,6 @@ export default function AuthenticatedLayout() {
       onKeyDown={toggleDrawer(false)}
       sx={{ width: 250 }}
     >
-      {/* User Info */}
       <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
         <Box display="flex" alignItems="center" gap={2}>
           <Avatar sx={{ bgcolor: "primary.main" }}>
@@ -98,12 +100,14 @@ export default function AuthenticatedLayout() {
               {user?.email}
             </Typography>
             {user?.isAdmin && (
-              <Chip
-                label="Admin"
-                size="small"
+              <Button
                 color="primary"
-                sx={{ mt: 0.5 }}
-              />
+                variant="outlined"
+                size="small"
+                sx={{ mt: 1 }}
+              >
+                Admin
+              </Button>
             )}
           </Box>
         </Box>
@@ -113,13 +117,29 @@ export default function AuthenticatedLayout() {
         <ListItem disablePadding>
           <ListItemButton component={RouterLink} to="/">
             <ListItemIcon>
-              <DashboardIcon />
+              <SettingsIcon />
             </ListItemIcon>
             <ListItemText primary="Dashboard" />
           </ListItemButton>
         </ListItem>
 
-        {/* Booking and Appointments moved to main page navigation, not in layout */}
+        <ListItem disablePadding>
+          <ListItemButton component={RouterLink} to="/">
+            <ListItemIcon>
+              <PersonIcon />
+            </ListItemIcon>
+            <ListItemText primary="Booking" />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem disablePadding>
+          <ListItemButton component={RouterLink} to="/my-appointments">
+            <ListItemIcon>
+              <PersonIcon />
+            </ListItemIcon>
+            <ListItemText primary="My Schedule" />
+          </ListItemButton>
+        </ListItem>
 
         <ListItem disablePadding>
           <ListItemButton component={RouterLink} to="/profile">
@@ -141,8 +161,6 @@ export default function AuthenticatedLayout() {
                 <ListItemText primary="Admin Panel" />
               </ListItemButton>
             </ListItem>
-
-            {/* Admin features */}
             <ListItem disablePadding>
               <ListItemButton component={RouterLink} to="/admin/notifications">
                 <ListItemIcon>
@@ -179,9 +197,7 @@ export default function AuthenticatedLayout() {
               <CircularProgress size={20} />
             ) : (
               <>
-                <ListItemIcon>
-                  <AccountCircle />
-                </ListItemIcon>
+                <AccountCircle />
                 <ListItemText primary="Logout" />
               </>
             )}
@@ -194,185 +210,215 @@ export default function AuthenticatedLayout() {
   return (
     <>
       <AppBar position="static" color="primary">
-        <Toolbar>
+        <Toolbar sx={{ justifyContent: "space-between" }}>
+          {/* Left side hamburger menu on mobile */}
           {isMobile ? (
-            <>
-              <IconButton
-                color="inherit"
-                edge="start"
-                onClick={toggleDrawer(true)}
-                aria-label="open drawer"
-                size="large"
-              >
-                <MenuIcon />
-              </IconButton>
-              <Drawer
-                anchor="left"
-                open={drawerOpen}
-                onClose={toggleDrawer(false)}
-              >
-                {drawerList}
-              </Drawer>
-            </>
+            <IconButton
+              color="inherit"
+              edge="start"
+              onClick={toggleDrawer(true)}
+              aria-label="open drawer"
+              size="large"
+            >
+              <MenuIcon />
+            </IconButton>
           ) : (
-            <Box sx={{ width: 48, mr: 2 }} />
+            <Box sx={{ width: 48 }} />
           )}
 
+          {/* Left side company name and welcome */}
           <Box
-            display="flex"
-            alignItems="center"
-            gap={2}
-            component={Link}
-            to="/"
-            sx={{ textDecoration: "none", color: "inherit", flexGrow: 1 }}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              color: "white",
+              flexGrow: 1,
+              px: 2,
+              gap: 2,
+            }}
           >
-            <Typography variant="h5" noWrap fontWeight="bold">
+            <Typography variant="h5" fontWeight="bold" sx={{ flexGrow: 1 }}>
               75 WAYS technologies
             </Typography>
             {user && (
-              <Box display="flex" alignItems="center" gap={1}>
-                <Typography variant="body1" color="text.secondary">
+              <Box sx={{ textAlign: "right" }}>
+                <Typography variant="body2" sx={{ opacity: 0.75 }}>
                   Welcome back,
                 </Typography>
-                <Typography variant="subtitle2" noWrap fontWeight="bold">
+                <Typography variant="subtitle1" fontWeight="bold" noWrap>
                   {user.name}
                 </Typography>
               </Box>
             )}
           </Box>
 
-          <Box sx={{ mr: 2 }}>
-            <ColorThemeSwitcher />
+          {/* Center navbar buttons with active highlight */}
+          <Box
+            sx={{
+              display: "flex",
+              gap: 4,
+              justifyContent: "center",
+              flexGrow: 1,
+              maxWidth: 400,
+            }}
+          >
+            {["/book", "/my-appointments"].map((path, index) => {
+              const label = index === 0 ? "Booking" : "My Schedule";
+              return (
+                <Button
+                  key={path}
+                  component={NavLink}
+                  to={path}
+                  color="inherit"
+                  variant="outlined"
+                  size="large"
+                  sx={({ isActive }) => ({
+                    fontWeight: "bold",
+                    letterSpacing: 0.5,
+                    backgroundColor: isActive
+                      ? "secondary.main"
+                      : "transparent",
+                    color: isActive ? "white" : "inherit",
+                    "&:hover": {
+                      backgroundColor: isActive
+                        ? "secondary.dark"
+                        : "rgba(255,255,255,0.1)",
+                    },
+                  })}
+                >
+                  {label}
+                </Button>
+              );
+            })}
           </Box>
 
-          {/* Notifications Icon with dropdown */}
-          <NotificationDropdown />
-
-          {!isMobile && (
-            <>
-              <Tooltip title={`${user?.name || "User"} (${user?.email || ""})`}>
-                <IconButton
-                  edge="end"
-                  aria-label="account of current user"
-                  aria-controls={menuId}
-                  aria-haspopup="true"
-                  aria-expanded={Boolean(anchorEl)}
-                  onClick={handleMenuOpen}
-                  color="inherit"
-                  size="large"
+          {/* Right side user profile, theme switcher, notifications */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <ColorThemeSwitcher />
+            <NotificationDropdown />
+            {!isMobile && (
+              <>
+                <Tooltip
+                  title={`${user?.name || "User"} (${user?.email || ""})`}
                 >
-                  <Avatar
-                    sx={{ width: 32, height: 32, bgcolor: "primary.main" }}
+                  <IconButton
+                    edge="end"
+                    aria-label="account of current user"
+                    aria-controls={menuId}
+                    aria-haspopup="true"
+                    aria-expanded={Boolean(anchorEl)}
+                    onClick={handleMenuOpen}
+                    color="inherit"
+                    size="large"
                   >
-                    {user?.name?.charAt(0)?.toUpperCase() || "U"}
-                  </Avatar>
-                </IconButton>
-              </Tooltip>
-
-              <Menu
-                id={menuId}
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleMenuClose}
-                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                transformOrigin={{ vertical: "top", horizontal: "right" }}
-                closeAfterTransition={false}
-                slotProps={{
-                  paper: {
-                    sx: {
-                      minWidth: 200,
-                      mt: 1,
-                      boxShadow: 3,
+                    <Avatar
+                      sx={{ width: 32, height: 32, bgcolor: "primary.main" }}
+                    >
+                      {user?.name?.charAt(0)?.toUpperCase() || "U"}
+                    </Avatar>
+                  </IconButton>
+                </Tooltip>
+                <Menu
+                  id={menuId}
+                  anchorEl={anchorEl}
+                  open={Boolean(anchorEl)}
+                  onClose={handleMenuClose}
+                  anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                  transformOrigin={{ vertical: "top", horizontal: "right" }}
+                  closeAfterTransition={false}
+                  slotProps={{
+                    paper: {
+                      sx: {
+                        minWidth: 200,
+                        mt: 1,
+                        boxShadow: 3,
+                      },
                     },
-                  },
-                }}
-              >
-                <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
-                  <Typography variant="subtitle2" fontWeight="bold">
-                    {user?.name || "User"}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {user?.email}
-                  </Typography>
-                </Box>
-
-                <MenuItem
-                  component={Link}
-                  to="/profile"
-                  onClick={handleMenuClose}
+                  }}
                 >
-                  <PersonIcon sx={{ mr: 2 }} />
-                  Profile
-                </MenuItem>
-
-                {/* Booking and Appointments moved to main page navigation, not in layout */}
-
-                <MenuItem
-                  component={Link}
-                  to="/settings"
-                  onClick={handleMenuClose}
-                >
-                  <SettingsIcon sx={{ mr: 2 }} />
-                  Settings
-                </MenuItem>
-
-                {user?.isAdmin && (
+                  <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      {user?.name || "User"}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {user?.email}
+                    </Typography>
+                  </Box>
                   <MenuItem
                     component={Link}
-                    to="/admin"
+                    to="/profile"
                     onClick={handleMenuClose}
                   >
-                    <AdminPanelSettingsIcon sx={{ mr: 2 }} />
-                    Admin Panel
+                    <PersonIcon sx={{ mr: 2 }} />
+                    Profile
                   </MenuItem>
-                )}
-                {user?.isAdmin && (
-                  <>
+                  <MenuItem
+                    component={Link}
+                    to="/settings"
+                    onClick={handleMenuClose}
+                  >
+                    <SettingsIcon sx={{ mr: 2 }} />
+                    Settings
+                  </MenuItem>
+
+                  {user?.isAdmin && (
                     <MenuItem
                       component={Link}
-                      to="/admin/notifications"
+                      to="/admin"
                       onClick={handleMenuClose}
                     >
-                      <NotificationsIcon sx={{ mr: 2 }} />
-                      Admin Notifications
+                      <AdminPanelSettingsIcon sx={{ mr: 2 }} />
+                      Admin Panel
                     </MenuItem>
-                    <MenuItem
-                      component={Link}
-                      to="/admin/users"
-                      onClick={handleMenuClose}
-                    >
-                      <PersonIcon sx={{ mr: 2 }} />
-                      Admin Users
-                    </MenuItem>
-                  </>
-                )}
-
-                <Divider />
-
-                <MenuItem onClick={handleLogout} disabled={isLoading}>
-                  {isLoading ? (
-                    <CircularProgress size={20} />
-                  ) : (
+                  )}
+                  {user?.isAdmin && (
                     <>
-                      <AccountCircle sx={{ mr: 2 }} />
-                      Logout
+                      <MenuItem
+                        component={Link}
+                        to="/admin/notifications"
+                        onClick={handleMenuClose}
+                      >
+                        <NotificationsIcon sx={{ mr: 2 }} />
+                        Admin Notifications
+                      </MenuItem>
+                      <MenuItem
+                        component={Link}
+                        to="/admin/users"
+                        onClick={handleMenuClose}
+                      >
+                        <PersonIcon sx={{ mr: 2 }} />
+                        Admin Users
+                      </MenuItem>
                     </>
                   )}
-                </MenuItem>
-              </Menu>
-            </>
-          )}
+
+                  <Divider />
+
+                  <MenuItem onClick={handleLogout} disabled={isLoading}>
+                    {isLoading ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      <>
+                        <AccountCircle sx={{ mr: 2 }} />
+                        Logout
+                      </>
+                    )}
+                  </MenuItem>
+                </Menu>
+              </>
+            )}
+          </Box>
         </Toolbar>
       </AppBar>
+
+      {/* Mobile Drawer */}
+      {isMobile && (
+        <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
+          {drawerList}
+        </Drawer>
+      )}
+
       <Outlet />
     </>
   );
-
-  function handleMenuClose() {
-    setAnchorEl(null);
-  }
-
-  function handleMenuOpen(event: React.MouseEvent<HTMLElement>) {
-    setAnchorEl(event.currentTarget);
-  }
 }

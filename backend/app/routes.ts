@@ -7,10 +7,7 @@ import staffRoutes from "./staff/staff.route";
 import appointmentRoutes from "./appointment/appointment.route";
 
 const router = Router();
-router.use((req, res, next) => {
-  console.log(`[routes] Request to: ${req.method} ${req.originalUrl}`);
-  next();
-});
+
 router.use("/users", userRoutes);
 router.use("/otp", otpRoutes);
 router.use("/notifications", notificationRoutes);

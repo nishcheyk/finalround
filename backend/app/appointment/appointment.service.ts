@@ -1,10 +1,28 @@
 import createHttpError from "http-errors";
 import Appointment, { IAppointment } from "./appointment.schema";
 import Staff from "../staff/staff.schema";
-import Service from "../services/service.schema";
-import User from "../users/user.schema";
+import Service, { IServiceDocument } from "../services/service.schema";
+import User, { IUser } from "../users/user.schema";
 import { addMinutes } from "../common/utils/time.util";
 import notificationQueue from "../common/services/bull-queue.service";
+import { Types } from "mongoose";
+
+// Type guard for IUser (populated user)
+function isUserPopulated(user: Types.ObjectId | IUser): user is IUser {
+  return !!(user as IUser).name;
+}
+
+// Type guard for IService (populated service)
+function isServicePopulated(
+  service: Types.ObjectId | IServiceDocument
+): service is IServiceDocument {
+  return !!(service as IServiceDocument).duration;
+}
+
+// Type guard for staff.user (populated user)
+function isStaffUserPopulated(staffUser: any): staffUser is IUser {
+  return staffUser && typeof staffUser === "object" && "name" in staffUser;
+}
 
 interface AvailabilityResponse {
   bookedSlots: Date[];
@@ -29,18 +47,14 @@ export class AppointmentService {
     endOfDay.setDate(endOfDay.getDate() + 1);
 
     const existingAppointments = await Appointment.find({
-      staff: staffId,
+      staff: new Types.ObjectId(staffId),
       startTime: { $gte: startOfDay, $lt: endOfDay },
       status: "scheduled",
     }).sort({ startTime: "asc" });
 
-    const bookedSlots: Date[] = existingAppointments.map(
-      (appt) => appt.startTime
-    );
+    const bookedSlots = existingAppointments.map((appt) => appt.startTime);
 
-    return {
-      bookedSlots,
-    };
+    return { bookedSlots };
   }
 
   static async create(
@@ -62,9 +76,9 @@ export class AppointmentService {
     const endTime = addMinutes(new Date(startTime), service.duration);
 
     const appointment = new Appointment({
-      user: userId,
-      staff: staffId,
-      service: serviceId,
+      user: new Types.ObjectId(userId),
+      staff: new Types.ObjectId(staffId),
+      service: new Types.ObjectId(serviceId),
       startTime,
       endTime,
     });
@@ -81,51 +95,18 @@ export class AppointmentService {
       throw error;
     }
 
-    // Enqueue confirmation email and SMS to user
-    if (user.email) {
-      await notificationQueue.add("sendNotificationEmail", {
-        to: user.email,
-        subject: "Appointment Confirmed",
-        html: `<div style='font-family: sans-serif;'>
-                <h2>Appointment Confirmed</h2>
-                <p>Your appointment for ${service.name} with ${staff.user?.name} is confirmed on ${appointment.startTime.toLocaleString()}</p>
-              </div>`,
-      });
-      console.log(`Enqueued email job for user ${user.email}`);
-    }
+    await notificationQueue.add("sendAppointmentConfirmation", {
+      userEmail: user.email || "",
+      userPhone: user.phone || "",
+      userName: user.name,
+      serviceName: service.name,
+      staffName: staff.user?.name || "",
+      appointmentTime: appointment.startTime,
+      staffEmail: staff.user?.email || "",
+      staffPhone: staff.user?.phone || "",
+      clientName: user.name,
+    });
 
-    if (user.phone) {
-      await notificationQueue.add("sendNotificationSMS", {
-        to: user.phone,
-        body: `Appointment confirmed: ${service.name} with ${staff.user?.name} at ${appointment.startTime.toLocaleString()}`,
-      });
-      console.log(`Enqueued SMS job for user ${user.phone}`);
-    }
-
-    // Enqueue notification email and SMS to staff
-    if (staff.user?.email) {
-      await notificationQueue.add("sendNotificationEmail", {
-        to: staff.user.email,
-        subject: "New Appointment Scheduled",
-        html: `<div style='font-family: sans-serif;'>
-                <h2>New Appointment Scheduled</h2>
-                <p>Service: ${service.name}</p>
-                <p>Client: ${user.name}</p>
-                <p>When: ${appointment.startTime.toLocaleString()}</p>
-              </div>`,
-      });
-      console.log(`Enqueued email job for staff ${staff.user.email}`);
-    }
-
-    if (staff.user?.phone) {
-      await notificationQueue.add("sendNotificationSMS", {
-        to: staff.user.phone,
-        body: `New appointment for ${service.name} with client ${user.name} at ${appointment.startTime.toLocaleString()}`,
-      });
-      console.log(`Enqueued SMS job for staff ${staff.user.phone}`);
-    }
-
-    // Schedule reminder for user 24 hours before appointment
     const reminderDate = new Date(appointment.startTime);
     reminderDate.setHours(reminderDate.getHours() - 24);
     const delay = reminderDate.getTime() - Date.now();
@@ -136,22 +117,165 @@ export class AppointmentService {
         {
           userEmail: user.email || "",
           userPhone: user.phone || "",
-          userName: user.name || "",
-          serviceName: service.name || "",
+          userName: user.name,
+          serviceName: service.name,
           appointmentTime: appointment.startTime,
         },
         { delay }
       );
-      console.log(`Scheduled appointment reminder for user ${user.email}`);
     }
 
     return appointment;
   }
 
+  static async cancelAppointment(
+    appointmentId: string,
+    userId: string
+  ): Promise<IAppointment> {
+    console.log(
+      `Starting cancelAppointment for appointmentId=${appointmentId}, userId=${userId}`
+    );
+
+    if (!Types.ObjectId.isValid(appointmentId)) {
+      console.error(`Invalid appointmentId: ${appointmentId}`);
+      throw createHttpError(400, "Invalid appointmentId");
+    }
+
+    const appointment = await Appointment.findById(appointmentId)
+      .populate("user", "name email phone")
+      .populate("staff", "user")
+      .populate("service");
+
+    if (!appointment) {
+      console.error(`Appointment not found for id: ${appointmentId}`);
+      throw createHttpError(404, "Appointment not found");
+    }
+
+    if (!isUserPopulated(appointment.user)) {
+      console.error("Appointment user not populated");
+      throw createHttpError(400, "Appointment user not populated");
+    }
+
+    if (appointment.user._id.toString() !== userId) {
+      console.error(
+        `Unauthorized cancel attempt by userId=${userId} on appointment owned by userId=${appointment.user._id.toString()}`
+      );
+      throw createHttpError(403, "Unauthorized to cancel this appointment");
+    }
+
+    if (appointment.status === "cancelled") {
+      console.error(`Appointment already cancelled: ${appointmentId}`);
+      throw createHttpError(400, "Appointment is already cancelled");
+    }
+
+    appointment.status = "cancelled";
+    await appointment.save();
+    console.log(
+      `Appointment status updated to cancelled for id: ${appointmentId}`
+    );
+
+    const staffUser = (appointment.staff as any).user;
+
+    await notificationQueue.add("sendAppointmentCancellation", {
+      userEmail: appointment.user.email || "",
+      userPhone: appointment.user.phone || "",
+      userName: appointment.user.name,
+      serviceName: isServicePopulated(appointment.service)
+        ? appointment.service.name
+        : "",
+      staffName: isStaffUserPopulated(staffUser) ? staffUser.name : "",
+      appointmentTime: appointment.startTime,
+      staffEmail: isStaffUserPopulated(staffUser) ? staffUser.email : "",
+      staffPhone: isStaffUserPopulated(staffUser) ? staffUser.phone : "",
+    });
+
+    console.log(
+      `Notification job added for appointment cancellation, appointmentId=${appointmentId}`
+    );
+
+    return appointment;
+  }
+
+  static async rescheduleAppointment(
+    appointmentId: string,
+    userId: string,
+    newStartTime: Date
+  ): Promise<IAppointment> {
+    if (!Types.ObjectId.isValid(appointmentId))
+      throw createHttpError(400, "Invalid appointmentId");
+
+    const appointment = await Appointment.findById(appointmentId)
+      .populate("user", "name email phone")
+      .populate("staff", "user")
+      .populate("service");
+
+    if (!appointment) throw createHttpError(404, "Appointment not found");
+
+    if (!isUserPopulated(appointment.user))
+      throw createHttpError(400, "Appointment user not populated");
+
+    if (appointment.user._id.toString() !== userId)
+      throw createHttpError(403, "Unauthorized to reschedule this appointment");
+
+    if (!isServicePopulated(appointment.service))
+      throw createHttpError(500, "Service duration not available");
+
+    const endTime = addMinutes(
+      new Date(newStartTime),
+      appointment.service.duration
+    );
+
+    const conflicting = await Appointment.findOne({
+      staff: (appointment.staff as any)._id,
+      startTime: newStartTime,
+      status: "scheduled",
+      _id: { $ne: appointment._id },
+    });
+
+    if (conflicting)
+      throw createHttpError(
+        409,
+        "This new time slot is not available. Please choose another time."
+      );
+
+    const oldStartTime = appointment.startTime;
+    appointment.startTime = newStartTime;
+    appointment.endTime = endTime;
+    appointment.status = "scheduled";
+    await appointment.save();
+
+    const staffUser = (appointment.staff as any).user;
+
+    await notificationQueue.add("sendAppointmentReschedule", {
+      userEmail: appointment.user.email || "",
+      userPhone: appointment.user.phone || "",
+      userName: appointment.user.name,
+      serviceName: appointment.service.name,
+      staffName: isStaffUserPopulated(staffUser) ? staffUser.name : "",
+      oldAppointmentTime: oldStartTime,
+      newAppointmentTime: newStartTime,
+      staffEmail: isStaffUserPopulated(staffUser) ? staffUser.email : "",
+      staffPhone: isStaffUserPopulated(staffUser) ? staffUser.phone : "",
+    });
+
+    return appointment;
+  }
+
   static async findForUser(userId: string): Promise<IAppointment[]> {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw createHttpError(400, "Invalid userId");
+    }
     return Appointment.find({ user: userId })
       .populate("service", "name duration")
       .populate({ path: "staff", populate: { path: "user", select: "name" } })
+      .sort({ startTime: "desc" });
+  }
+
+  static async findAll(): Promise<IAppointment[]> {
+    return Appointment.find()
+      .populate("service", "name duration")
+      .populate({ path: "staff", populate: { path: "user", select: "name" } })
+      .populate("user", "name email")
       .sort({ startTime: "desc" });
   }
 }

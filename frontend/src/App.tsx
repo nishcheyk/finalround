@@ -20,10 +20,8 @@ const Home = lazy(() => import("./pages/homepage"));
 const LoginPage = lazy(() => import("./pages/login"));
 const Register = lazy(() => import("./pages/register"));
 const ForgetPasswordPage = lazy(() => import("./pages/ForgetPasswordPage"));
-const AppointmentBookingPage = lazy(
-  () => import("./pages/AppointmentBookingPage")
-);
-const MyAppointmentsPage = lazy(() => import("./pages/MyAppointmentsPage"));
+const BookingPage = lazy(() => import("./pages/BookingPage"));
+const MyAppointmentsPage = lazy(() => import("./pages/AppointmentsPage"));
 
 // Admin Pages
 const AdminLandingPage = lazy(() => import("./pages/AdminLandingPage"));
@@ -51,7 +49,7 @@ const RoleProtectedRoute: React.FC<{ requiredAdmin?: boolean }> = ({
   return <Outlet />;
 };
 
-// Wrapper component to inject navigation props into AdminLandingPage
+// Wrapper for AdminLandingPage to inject navigation props
 const AdminLandingWrapper: React.FC = () => {
   const navigate = useNavigate();
 
@@ -84,17 +82,16 @@ const App: React.FC = () => {
         }
       >
         <Routes>
-          {/* Protected routes for any authenticated user */}
+          {/* Protected routes for authenticated users */}
           <Route element={<RoleProtectedRoute />}>
             <Route element={<AuthenticatedLayout />}>
-              <Route path="/" element={<Home />} />
-              <Route path="/book" element={<AppointmentBookingPage />} />
+              <Route path="/" element={<BookingPage />} />
               <Route path="/my-appointments" element={<MyAppointmentsPage />} />
               {/* other authenticated routes */}
             </Route>
           </Route>
 
-          {/* Admin routes */}
+          {/* Admin routes with admin role check */}
           <Route element={<RoleProtectedRoute requiredAdmin />}>
             <Route element={<AuthenticatedLayout />}>
               <Route path="/admin" element={<AdminLandingWrapper />} />
@@ -112,14 +109,14 @@ const App: React.FC = () => {
             </Route>
           </Route>
 
-          {/* Public routes */}
+          {/* Public routes without authentication */}
           <Route element={<BasicLayout />}>
             <Route path="/signup" element={<Register />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/forget-password" element={<ForgetPasswordPage />} />
           </Route>
 
-          {/* Catch all redirect */}
+          {/* Fallback redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

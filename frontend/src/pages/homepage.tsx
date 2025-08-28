@@ -1,9 +1,10 @@
 import { Box, Typography } from "@mui/material";
 import { CardCarousel } from "../components/ui/card-carousel";
-import ManualRefreshButton from "../components/ManualRefreshButton";
+
 import { withUserAccess } from "../components/hocs";
-import MyAppointmentsPage from "./MyAppointmentsPage";
-import AppointmentBookingPage from "./AppointmentBookingPage";
+
+import AppointmentBookingPage from "./AppointmentsPage.tsx";
+import BookingPage from "./BookingPage.tsx";
 
 const images = [
   { src: "/card/1.png", alt: "Image 1" },
@@ -16,6 +17,9 @@ const HomeComponent = () => {
     <>
       <Box sx={{ mt: 6 }}>
         <AppointmentBookingPage />
+      </Box>
+      <Box sx={{ mt: 6 }}>
+        <BookingPage />
       </Box>
       <div className="pt-40">
         <CardCarousel

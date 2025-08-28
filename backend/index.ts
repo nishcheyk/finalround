@@ -57,7 +57,7 @@ export async function disconnectDB() {
   if (mongoose.connection.readyState !== 0) await mongoose.disconnect();
 }
 console.log(process.env.MONGODB_URI);
-console.log(process.env.NODE_ENV);
+
 // Start server and connect to MongoDB if not in test mode
 if (process.env.NODE_ENV !== "test") {
   connectDB(process.env.MONGODB_URI!).then(() => {

@@ -1,16 +1,24 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Document, Schema, Types } from "mongoose";
+import { IUser } from "../users/user.schema";
+import { IServiceDocument } from "../services/service.schema";
 
-export interface IAppointment extends Document {
-  user: mongoose.Types.ObjectId;
-  staff: mongoose.Types.ObjectId;
-  service: mongoose.Types.ObjectId;
+export interface IStaffUser {
+  user?: IUser | Types.ObjectId;
+}
+
+export interface IAppointment {
+  user: Types.ObjectId | IUser;
+  staff: Types.ObjectId | IStaffUser;
+  service: Types.ObjectId | IServiceDocument;
   startTime: Date;
   endTime: Date;
   status: "scheduled" | "completed" | "cancelled" | "no-show";
   notes?: string;
 }
 
-const AppointmentSchema: Schema = new Schema(
+export interface IAppointmentDocument extends IAppointment, Document {}
+
+const AppointmentSchema: Schema<IAppointmentDocument> = new Schema(
   {
     user: { type: Schema.Types.ObjectId, ref: "User", required: true },
     staff: { type: Schema.Types.ObjectId, ref: "Staff", required: true },
@@ -27,7 +35,9 @@ const AppointmentSchema: Schema = new Schema(
   { timestamps: true }
 );
 
-// Prevent double booking a staff member for the same time slot
 AppointmentSchema.index({ staff: 1, startTime: 1 }, { unique: true });
 
-export default mongoose.model<IAppointment>("Appointment", AppointmentSchema);
+export default mongoose.model<IAppointmentDocument>(
+  "Appointment",
+  AppointmentSchema
+);

@@ -63,16 +63,55 @@ export class NotificationService {
           await notificationQueue.add("sendNotificationEmail", {
             to: user.email,
             subject: data.title,
-            html: `<div style='font-family: sans-serif;'><h2>${data.title}</h2><p>${data.message}</p></div>`,
+            html: ` <html>
+    <head>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          background-color: #f9f9f9;
+          padding: 20px;
+          color: #333;
+        }
+        .container {
+          background: #fff;
+          padding: 20px;
+          border-radius: 8px;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+          max-width: 600px;
+          margin: auto;
+        }
+        h2 {
+          color: #007BFF;
+        }
+        p {
+          line-height: 1.6;
+          font-size: 16px;
+        }
+        .footer {
+          font-size: 12px;
+          color: #888;
+          margin-top: 20px;
+          text-align: center;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h2>${data.title}</h2>
+        <p>${data.message}</p>
+        <div class="footer">
+          &copy; 2025 75 WAYS technologies. All rights reserved.
+        </div>
+      </div>
+    </body>
+  </html>`,
           });
-          console.log(`Enqueued email job for ${user.email}`);
         }
         if (user.phone) {
           await notificationQueue.add("sendNotificationSMS", {
             to: user.phone,
             body: `${data.title}: ${data.message}`,
           });
-          console.log(`Enqueued SMS job for ${user.phone}`);
         }
       }
 
@@ -94,7 +133,6 @@ export class NotificationService {
         .populate("readBy.user", "name email");
 
       if (!notification) {
-        console.log(`Notification not found for id: ${notificationId}`);
         throw createHttpError(404, "Notification not found");
       }
 
@@ -109,10 +147,6 @@ export class NotificationService {
 
       const unreadUsers = notification.recipients.filter(
         (user) => !readUserIds.has(user._id.toString())
-      );
-
-      console.log(
-        `Read users count: ${readUsers.length}, unread users count: ${unreadUsers.length}`
       );
 
       return {

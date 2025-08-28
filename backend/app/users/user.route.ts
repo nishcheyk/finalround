@@ -33,7 +33,7 @@ const router = Router();
 
 router.post(
   "/register",
-  registerLimiter,
+
   validate(registerValidation),
   registerController
 );
