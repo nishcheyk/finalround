@@ -189,17 +189,18 @@ export const api = createApi({
       }),
       invalidatesTags: ["Appointments"],
     }),
-    rescheduleAppointment: builder.mutation<
-      any,
-      { id: string; newStartTime: Date }
-    >({
-      query: ({ id, newStartTime }) => ({
-        url: `/appointments/${id}/reschedule`,
-        method: "",
-        body: { newStartTime },
-      }),
-      invalidatesTags: ["Appointments"],
-    }),
+  rescheduleAppointment: builder.mutation<
+  any,
+  { id: string; newStartTime: string; staffId: string; serviceId: string }
+>({
+  query: ({ id, newStartTime, staffId, serviceId }) => ({
+    url: `/appointments/${id}/reschedule`,
+    method: "POST",
+    body: { newStartTime, staffId, serviceId },
+  }),
+  invalidatesTags: ["Appointments"],
+}),
+
     getAllAppointments: builder.query<any, void>({
       query: () => "/appointments/all",
       providesTags: ["Appointments"],
@@ -270,6 +271,10 @@ export const api = createApi({
       invalidatesTags: ["Notifications"],
     }),
 
+    /* The `getNotificationStats` endpoint is a query defined in the Redux Toolkit Query API. It is
+    used to fetch statistics related to notifications. When this query is executed, it sends a
+    request to the `/notifications/stats` endpoint to retrieve information about notification
+    statistics. */
     getNotificationStats: builder.query<
       { success: boolean; stats: NotificationStats },
       void
@@ -278,6 +283,8 @@ export const api = createApi({
       providesTags: ["Notifications"],
     }),
 
+ /* The `getNotificationReadStatus` endpoint is a query defined in the Redux Toolkit Query API. It is
+ used to fetch the read status of a specific notification based on the provided `notificationId`. */
     getNotificationReadStatus: builder.query<any, string>({
       query: (notificationId) => `/notifications/${notificationId}/read-status`,
       providesTags: ["Notifications"],

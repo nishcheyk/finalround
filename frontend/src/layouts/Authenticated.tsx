@@ -42,6 +42,10 @@ import { resetCredentials } from "../store/reducers/authReducer";
 import { ColorThemeSwitcher } from "../components/ThemeSelector";
 import NotificationDropdown from "../components/NotificationDropdown";
 
+/**
+ * The `AuthenticatedLayout` function is a React component that provides a layout for authenticated
+ * users, including a navigation bar with various links and user profile options.
+ */
 export default function AuthenticatedLayout() {
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
@@ -54,6 +58,8 @@ export default function AuthenticatedLayout() {
 
   const toggleDrawer = (open: boolean) => () => setDrawerOpen(open);
 
+/* The above code snippet is a TypeScript React function named `handleLogout` that is using the
+`useCallback` hook. */
   const handleLogout = useCallback(async () => {
     handleMenuClose();
     setDrawerOpen(false);
@@ -71,10 +77,19 @@ export default function AuthenticatedLayout() {
 
   const menuId = "primary-account-menu";
 
+/**
+ * The function `handleMenuClose` sets the anchor element to null.
+ */
   function handleMenuClose() {
     setAnchorEl(null);
   }
 
+ /**
+  * The function `handleMenuOpen` sets the anchor element for a menu based on the current event target.
+  * @param event - The `event` parameter in the `handleMenuOpen` function is a React MouseEvent of type
+  * HTMLElement. It represents the event that triggered the menu to open, such as a mouse click or
+  * touch event.
+  */
   function handleMenuOpen(event: React.MouseEvent<HTMLElement>) {
     setAnchorEl(event.currentTarget);
   }
@@ -207,6 +222,8 @@ export default function AuthenticatedLayout() {
     </Box>
   );
 
+/* The above code is a TypeScript React component that represents a responsive navigation bar layout
+for a web application. Here is a breakdown of what the code is doing: */
   return (
     <>
       <AppBar position="static" color="primary">

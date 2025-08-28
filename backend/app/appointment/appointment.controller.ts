@@ -5,6 +5,8 @@ import { AuthenticatedUser } from "../types/express";
 import createHttpError from "http-errors";
 import { NextFunction } from "express";
 
+
+/* The `createAppointment` function is an asynchronous handler that creates a new appointment. */
 export const createAppointment = asyncHandler(
   async (req: Request, res: Response) => {
     const user = req.user as AuthenticatedUser;
@@ -13,6 +15,8 @@ export const createAppointment = asyncHandler(
   }
 );
 
+/* The `cancelAppointment` function is an asynchronous handler that handles the cancellation of an
+appointment.  */
 export const cancelAppointment = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -40,19 +44,29 @@ export const cancelAppointment = asyncHandler(
   }
 );
 
+/* This `rescheduleAppointment` function is an asynchronous handler that handles the rescheduling of an
+appointment.  */
 export const rescheduleAppointment = asyncHandler(
   async (req: Request, res: Response) => {
     const user = req.user as AuthenticatedUser;
-    const { newStartTime } = req.body;
+    const { newStartTime, staffId, serviceId } = req.body;
+
     const appointment = await AppointmentService.rescheduleAppointment(
       req.params.appointmentId,
       user.userId,
-      new Date(newStartTime)
+      {
+        newStartTime: new Date(newStartTime),
+        staffId,
+        serviceId,
+      }
     );
     res.status(200).json({ success: true, data: appointment });
   }
 );
 
+
+/* The `getUserAppointments` function is an asynchronous handler that retrieves appointments for a
+specific user.  */
 export const getUserAppointments = asyncHandler(
   async (req: Request, res: Response) => {
     const user = req.user as AuthenticatedUser;

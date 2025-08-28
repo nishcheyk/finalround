@@ -22,10 +22,13 @@ export default function RequestOtpForm({
   onNext: (email: string) => void;
   setLoading: (loading: boolean) => void;
 }) {
+/* This code snippet defines a functional component called `ReadStatusDialog` in a TypeScript React
+application. The component takes in props `open`, `loading`, `readUsers`, `unreadUsers`, and
+`onClose` through the `ReadStatusDialogProps` interface. */
   const [sendOtp, { isLoading }] = useSendOtpMutation();
   const [error, setError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(0);
-  
+
   const {
     register,
     handleSubmit,
@@ -55,7 +58,7 @@ export default function RequestOtpForm({
     } catch (error: any) {
       const errorMessage = error?.data?.message || "Failed to send OTP";
       setError(errorMessage);
-      
+
       // Handle 429 rate limit error
       if (error?.status === 429) {
         const waitTime = parseInt(errorMessage.match(/(\d+)/)?.[1] || "60");
@@ -74,7 +77,7 @@ export default function RequestOtpForm({
           {error}
         </Alert>
       )}
-      
+
       <form className={styles.form} onSubmit={handleSubmit(onSubmit)} noValidate>
         <TextField
           {...register("email")}
@@ -86,7 +89,7 @@ export default function RequestOtpForm({
           autoComplete="email"
           disabled={isLoading || countdown > 0}
         />
-        
+
         <Button
           type="submit"
           variant="contained"
@@ -95,14 +98,14 @@ export default function RequestOtpForm({
           className={styles.submitButton}
           fullWidth
         >
-          {isLoading 
-            ? "Sending OTP..." 
-            : countdown > 0 
-              ? `Wait ${countdown}s` 
+          {isLoading
+            ? "Sending OTP..."
+            : countdown > 0
+              ? `Wait ${countdown}s`
               : "Send OTP"
           }
         </Button>
-        
+
         {countdown > 0 && (
           <Typography variant="body2" color="text.secondary" textAlign="center" mt={1}>
             Rate limit exceeded. Please wait before requesting another OTP.

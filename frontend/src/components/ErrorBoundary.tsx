@@ -13,6 +13,9 @@ interface State {
   errorInfo?: ErrorInfo;
 }
 
+/* This code defines an `ErrorBoundary` component in TypeScript React. The `ErrorBoundary` component is
+used to catch errors that occur within its child components and display a fallback UI when an error
+is caught. */
 class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);

@@ -47,6 +47,18 @@ const AdminUsers: React.FC = () => {
     return adminUsers.length === 1 && adminUsers[0]._id === userId;
   };
 
+ /**
+  * The function `handleRoleChange` updates a user's role, but prevents demoting the last admin.
+  * @param {string} id - The `id` parameter is a string that represents the unique identifier of a
+  * user.
+  * @param {string} role - The `role` parameter in the `handleRoleChange` function represents the new
+  * role that you want to assign to a user with the specified `id`. It is a string value that can be
+  * "admin" or any other role that you want to assign to the user.
+  * @returns If the condition `isLastAdmin(id) && role !== "admin"` is met, an alert message "You
+  * cannot demote the last admin." will be displayed and the function will return without further
+  * execution. Otherwise, the function will update the user role using `updateUserRole({ id, role })`
+  * and then call `refetch()`.
+  */
   const handleRoleChange = async (id: string, role: string) => {
     if (isLastAdmin(id) && role !== "admin") {
       alert("You cannot demote the last admin.");
@@ -56,6 +68,10 @@ const AdminUsers: React.FC = () => {
     refetch();
   };
 
+ /**
+  * The function `handleDelete` deletes a user with a specific ID, closes a delete dialog, and then
+  * refetches data.
+  */
   const handleDelete = async () => {
     if (deleteDialog.id) {
       await deleteUser(deleteDialog.id);
@@ -64,6 +80,9 @@ const AdminUsers: React.FC = () => {
     }
   };
 
+/* The above code is a TypeScript React component that displays a user management interface for an
+admin. It includes tables for displaying and managing different types of users - admins, staff, and
+customers/guests. */
   return (
     <Box sx={{ p: 3, maxWidth: 900, mx: "auto" }}>
       <Typography variant="h4" gutterBottom>

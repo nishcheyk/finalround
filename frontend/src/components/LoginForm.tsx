@@ -52,6 +52,8 @@ const schema = yup.object({
 
 type FormData = yup.InferType<typeof schema>;
 
+/* The `interface LoginFormProps` is defining the props that the `LoginFormComponent` component expects
+to receive. Here's a breakdown of each prop: */
 interface LoginFormProps {
   // Props from withErrorHandling HOC
   error?: string | null;
@@ -63,6 +65,8 @@ interface LoginFormProps {
   setLoading: (loading: boolean) => void;
 }
 
+/* The above code is a TypeScript React functional component for a login form. Here is a breakdown of
+what the code is doing: */
 function LoginFormComponent({
   error,
   handleError,
@@ -90,6 +94,14 @@ function LoginFormComponent({
     setLoading(isLoginLoading);
   }, [isLoginLoading, setLoading]);
 
+ /**
+  * The onSubmit function handles user login, sets credentials, displays success message, and handles
+  * errors in a TypeScript React application.
+  * @param {FormData} data - The `data` parameter in the `onSubmit` function is of type `FormData`. It
+  * is likely used to store form data submitted by the user, such as username and password, for the
+  * purpose of logging in a user. This data is then passed to the `loginUser` function for
+  * authentication
+  */
   const onSubmit = async (data: FormData) => {
     try {
       clearError(); // Clear any previous errors
@@ -113,6 +125,8 @@ function LoginFormComponent({
     }
   };
 
+/* The `return` block in the code snippet you provided is rendering a login form component in a
+TypeScript React application. Here's a breakdown of what the code is doing: */
   return (
     <Box
       height="100vh"

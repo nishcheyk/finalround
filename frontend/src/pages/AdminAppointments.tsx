@@ -43,7 +43,6 @@ export default function AdminAppointments() {
   const { data: staffData } = useGetStaffQuery();
   const { data: servicesData } = useGetServicesQuery();
 
-  // Reschedule dialog states
   const [rescheduleId, setRescheduleId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedStaff, setSelectedStaff] = useState("");
@@ -65,6 +64,9 @@ export default function AdminAppointments() {
     { skip: !shouldFetchSlots, refetchOnMountOrArgChange: true }
   );
 
+/* The above code snippet is a TypeScript React component that uses the `useMemo` hook to generate a
+list of available time slots based on selected date, selected service, and services data. Here's a
+breakdown of what the code is doing: */
   const slotOptions = useMemo(() => {
     if (!selectedDate || !selectedService || !servicesData) return [];
 
@@ -100,14 +102,19 @@ export default function AdminAppointments() {
             hour: "2-digit",
             minute: "2-digit",
           }),
-          date: slotDate,
         });
       }
     }
+
     return slots;
   }, [slotsData, selectedDate, selectedService, servicesData]);
 
-  // Cancel appointment handler from appointments list logic
+/**
+ * The handleCancel function is used to cancel an appointment, displaying a success message if
+ * successful and an error message if unsuccessful.
+ * @param {string} id - The `id` parameter in the `handleCancel` function is a string that represents
+ * the unique identifier of the appointment that needs to be cancelled.
+ */
   const handleCancel = async (id: string) => {
     try {
       await cancelAppointment(id).unwrap();
@@ -126,7 +133,13 @@ export default function AdminAppointments() {
     }
   };
 
-  // Open reschedule dialog and initialize selection from appointment data
+/**
+ * The function `handleOpenReschedule` sets various state values based on the properties of the
+ * appointment object passed as a parameter.
+ * @param {any} appt - The `handleOpenReschedule` function takes an `appt` parameter, which seems to be
+ * an object representing an appointment. The function then extracts various properties from this
+ * `appt` object such as `_id`, `startTime`, `staff`, and `service` to set state values like `
+ */
   const handleOpenReschedule = (appt: any) => {
     setRescheduleId(String(appt._id));
     setSelectedDate(new Date(appt.startTime));
@@ -135,7 +148,13 @@ export default function AdminAppointments() {
     setSelectedTime(new Date(appt.startTime).toISOString());
   };
 
-  // Confirm reschedule handler from appointments list logic
+/**
+ * The function `handleConfirmReschedule` is used to handle the confirmation of rescheduling an
+ * appointment with error handling and displaying appropriate messages.
+ * @returns If any of the conditions `!rescheduleId`, `!selectedDate`, `!selectedStaff`,
+ * `!selectedService`, or `!selectedTime` are true, the function `handleConfirmReschedule` will return
+ * early and not execute the rest of the code block.
+ */
   const handleConfirmReschedule = async () => {
     if (
       !rescheduleId ||
@@ -149,18 +168,17 @@ export default function AdminAppointments() {
     try {
       await rescheduleAppointment({
         id: rescheduleId,
-        newStartTime: new Date(selectedTime),
+        staffId: selectedStaff,
+        serviceId: selectedService,
+        newStartTime: selectedTime,
       }).unwrap();
+
       setSnackbar({
         open: true,
         message: "Appointment rescheduled successfully.",
         severity: "success",
       });
-      setRescheduleId(null);
-      setSelectedDate(null);
-      setSelectedStaff("");
-      setSelectedService("");
-      setSelectedTime("");
+      handleCloseReschedule();
       refetch();
     } catch {
       setSnackbar({
@@ -171,6 +189,9 @@ export default function AdminAppointments() {
     }
   };
 
+  /**
+   * The function `handleCloseReschedule` resets various state variables to null or empty strings.
+   */
   const handleCloseReschedule = () => {
     setRescheduleId(null);
     setSelectedDate(null);
@@ -179,19 +200,20 @@ export default function AdminAppointments() {
     setSelectedTime("");
   };
 
+  /* The above code is a TypeScript React component for managing appointments in an admin dashboard.
+  Here's a breakdown of what the code is doing: */
   return (
     <Box sx={{ mt: 4, mx: "auto", maxWidth: 1200, px: 2 }}>
       <Typography
         variant="h4"
-        gutterBottom
         align="center"
-        sx={{ fontWeight: "bold", mb: 4 }}
+        fontWeight="bold"
+        gutterBottom
       >
         Admin Appointments Management
       </Typography>
 
-      {Array.isArray(appointmentsData?.data) &&
-      appointmentsData.data.length > 0 ? (
+      {appointmentsData?.data?.length ? (
         <Grid container spacing={3}>
           {appointmentsData.data.map((appt: any) => (
             <Grid item xs={12} sm={6} md={4} key={String(appt._id)}>
@@ -213,27 +235,19 @@ export default function AdminAppointments() {
                   <Typography variant="h6" fontWeight="bold" gutterBottom>
                     {appt.service?.name || "Unknown Service"}
                   </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    gutterBottom
-                  >
-                    <strong>User:</strong> {appt.user?.name || "Unknown User"}
+                  <Typography variant="body2" color="text.secondary">
+                    <strong>User:</strong> {appt.user?.name || "Unknown"}
                   </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    gutterBottom
-                  >
+                  <Typography variant="body2" color="text.secondary">
                     <strong>Staff:</strong>{" "}
-                    {appt.staff?.user?.name || "Unknown Staff"}
+                    {appt.staff?.user?.name || "Unknown"}
                   </Typography>
                   <Divider sx={{ my: 1 }} />
-                  <Typography variant="body2" gutterBottom>
+                  <Typography variant="body2">
                     <strong>Start:</strong>{" "}
                     {new Date(appt.startTime).toLocaleString()}
                   </Typography>
-                  <Typography variant="body2" gutterBottom>
+                  <Typography variant="body2">
                     <strong>End:</strong>{" "}
                     {new Date(appt.endTime).toLocaleString()}
                   </Typography>
@@ -244,10 +258,10 @@ export default function AdminAppointments() {
                       appt.status === "scheduled"
                         ? "primary.main"
                         : appt.status === "completed"
-                          ? "success.main"
-                          : appt.status === "cancelled"
-                            ? "error.main"
-                            : "warning.main"
+                        ? "success.main"
+                        : appt.status === "cancelled"
+                        ? "error.main"
+                        : "warning.main"
                     }
                     sx={{ mt: "auto" }}
                   >
@@ -260,7 +274,7 @@ export default function AdminAppointments() {
                       color="error"
                       fullWidth
                       disabled={appt.status === "cancelled"}
-                      onClick={() => handleCancel(String(appt._id))}
+                      onClick={() => handleCancel(appt._id)}
                     >
                       Cancel
                     </Button>
@@ -285,7 +299,7 @@ export default function AdminAppointments() {
       )}
 
       <Dialog
-        open={Boolean(rescheduleId)}
+        open={!!rescheduleId}
         onClose={handleCloseReschedule}
         maxWidth="xs"
         fullWidth
@@ -297,7 +311,10 @@ export default function AdminAppointments() {
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             <DateCalendar
               value={selectedDate}
-              onChange={setSelectedDate}
+              onChange={(newDate) => {
+                setSelectedDate(newDate);
+                setSelectedTime(""); // reset selected time
+              }}
               disablePast
             />
           </LocalizationProvider>
@@ -310,7 +327,7 @@ export default function AdminAppointments() {
               label="Time"
               disabled={!selectedDate || slotsLoading}
             >
-              {slotOptions.length > 0 ? (
+              {slotOptions.length ? (
                 slotOptions.map((slot) => (
                   <MenuItem key={slot.value} value={slot.value}>
                     {slot.label}

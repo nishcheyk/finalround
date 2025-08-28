@@ -4,6 +4,14 @@ import createHttpError from "http-errors";
 import { Types } from "mongoose";
 import notificationQueue from "../common/services/bull-queue.service";
 
+/* The above code is defining an interface in TypeScript called `CreateNotificationData`. This
+interface specifies the structure of an object that can be used to create a notification. The
+properties of the `CreateNotificationData` interface are as follows:
+- `title`: a required string property representing the title of the notification.
+- `message`: a required string property representing the message content of the notification.
+- `type`: an optional property that can have one of the values: "info", "warning", "error", or
+"success" to indicate the type of notification.
+- `priority`: an optional property that */
 export interface CreateNotificationData {
   title: string;
   message: string;
@@ -15,6 +23,16 @@ export interface CreateNotificationData {
   expiresAt?: Date;
 }
 
+/* The above code is defining an interface named `NotificationResponse` in TypeScript. This interface
+has the following properties:
+- `success`: a boolean indicating the success status of the notification response
+- `message`: a string containing a message related to the notification response
+- `notification`: an optional property that can hold a single notification object of type
+`INotification`
+- `notifications`: an optional property that can hold an array of notification objects of type
+`INotification`
+- `unreadCount`: an optional property that can hold a number representing the count of unread
+notifications */
 export interface NotificationResponse {
   success: boolean;
   message: string;
@@ -23,6 +41,8 @@ export interface NotificationResponse {
   unreadCount?: number;
 }
 
+/* The `NotificationService` class in TypeScript provides methods for creating, managing, and
+retrieving notifications, as well as handling notification statistics. */
 export class NotificationService {
   static async createNotification(
     data: CreateNotificationData

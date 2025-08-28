@@ -53,6 +53,12 @@ const NotificationDropdown: React.FC = () => {
     setAnchorEl(null);
   };
 
+  /**
+   * The function `handleMarkAsRead` marks a notification as read and displays a success or error
+   * message using toast notifications.
+   * @param {string} notificationId - The `notificationId` parameter is a string that represents the
+   * unique identifier of a notification that needs to be marked as read.
+   */
   const handleMarkAsRead = async (notificationId: string) => {
     try {
       setMarkingAsRead(notificationId);
@@ -65,6 +71,10 @@ const NotificationDropdown: React.FC = () => {
     }
   };
 
+ /**
+  * The function `handleMarkAllAsRead` marks all notifications as read and displays a success message
+  * if successful, or an error message if unsuccessful.
+  */
   const handleMarkAllAsRead = async () => {
     try {
       await markAllAsRead().unwrap();
@@ -74,6 +84,18 @@ const NotificationDropdown: React.FC = () => {
     }
   };
 
+ /**
+  * The function `getNotificationIcon` returns an icon component based on the type provided (info,
+  * warning, error, success).
+  * @param {string} type - The `type` parameter in the `getNotificationIcon` function is a string that
+  * represents the type of notification icon to be returned. It can have values such as 'info',
+  * 'warning', 'error', or 'success'. If the type is not recognized, the function will return the
+  * default `<
+  * @returns The function `getNotificationIcon` returns an icon component based on the `type` parameter
+  * provided. The returned icon component depends on the value of the `type` parameter:
+  * - If `type` is 'info', it returns an `<InfoIcon>` component with color set to "info".
+  * - If `type` is 'warning', it returns a `<WarningIcon>` component with color set to
+  */
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'info': return <InfoIcon color="info" />;

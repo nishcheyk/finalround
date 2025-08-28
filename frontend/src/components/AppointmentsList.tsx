@@ -1,3 +1,5 @@
+/* The above code is a TypeScript React component called `AppointmentsList`. Here is a summary of what
+the code is doing: */
 import React, { useState, useMemo, useEffect } from "react";
 import {
   Box,
@@ -15,7 +17,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  CircularProgress,
+  Skeleton,
 } from "@mui/material";
 import { motion } from "framer-motion";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -29,19 +31,27 @@ import {
   useGetUserAppointmentsQuery,
 } from "../services/api";
 
+/* The above code is a TypeScript React component called `AppointmentsList`. */
 export function AppointmentsList() {
   const theme = useTheme();
   const isSmUp = useMediaQuery(theme.breakpoints.up("sm"));
   const isMdUp = useMediaQuery(theme.breakpoints.up("md"));
 
-  const { data: appointmentsData, refetch } = useGetUserAppointmentsQuery();
+  const {
+    data: appointmentsData,
+    isLoading: appointmentsLoading,
+    refetch,
+  } = useGetUserAppointmentsQuery();
   const [cancelAppointment] = useCancelAppointmentMutation();
   const [rescheduleAppointment] = useRescheduleAppointmentMutation();
 
-  const { data: staffData } = useGetStaffQuery();
+  const { data: staffData, isLoading: staffLoading } = useGetStaffQuery();
   const { data: servicesData } = useGetServicesQuery();
 
   // Reschedule dialog state
+  /* These lines of code are initializing state variables using the `useState` hook in a TypeScript
+  React component called `AppointmentsList`. Here is a breakdown of what each state variable is used
+  for: */
   const [rescheduleId, setRescheduleId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedStaff, setSelectedStaff] = useState("");
@@ -50,14 +60,14 @@ export function AppointmentsList() {
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
-    severity: "success",
+    severity: "success" as "success" | "error" | "warning" | "info",
   });
 
   const slotOptions = useMemo(() => {
     if (!selectedDate) return [];
 
     const startHour = 9;
-    const endHour = 22; // show slots only 9 to 10 AM
+    const endHour = 22; // slots from 9 AM to 10 PM
     const duration = 30; // 30 mins slot duration
     const baseDate = new Date(selectedDate);
     baseDate.setHours(0, 0, 0, 0);
@@ -81,7 +91,7 @@ export function AppointmentsList() {
     return slots;
   }, [selectedDate]);
 
-  // Reset selectedTime if it is not a valid option to avoid MUI warning
+  // Reset selectedTime if it’s not a valid option (to avoid MUI warnings)
   useEffect(() => {
     if (
       selectedTime &&
@@ -91,6 +101,13 @@ export function AppointmentsList() {
     }
   }, [slotOptions, selectedTime]);
 
+  /**
+   * The function `handleCancel` cancels an appointment, displays a success message if successful, and
+   * an error message if unsuccessful.
+   * @param {string} appointmentId - The `appointmentId` parameter is a string that represents the
+   * unique identifier of the appointment that needs to be cancelled. This identifier is used to locate
+   * and cancel the specific appointment in the system.
+   */
   const handleCancel = async (appointmentId: string) => {
     try {
       await cancelAppointment(appointmentId).unwrap();
@@ -109,6 +126,13 @@ export function AppointmentsList() {
     }
   };
 
+ /**
+  * The function `handleOpenReschedule` sets the state with appointment details for rescheduling.
+  * @param {any} appointment - The `handleOpenReschedule` function takes an `appointment` object as a
+  * parameter. The appointment object likely contains information about a scheduled appointment, such
+  * as `_id`, `startTime`, `staffId`, and `serviceId`. The function then sets various state variables
+  * based on the values from the `
+  */
   const handleOpenReschedule = (appointment: any) => {
     setRescheduleId(appointment._id);
     setSelectedDate(new Date(appointment.startTime));
@@ -117,6 +141,15 @@ export function AppointmentsList() {
     setSelectedTime(new Date(appointment.startTime).toISOString());
   };
 
+ /**
+  * The function `handleConfirmReschedule` checks for required fields, sends a request to reschedule an
+  * appointment, and displays a corresponding message based on the outcome.
+  * @returns If any of the required fields are missing, a warning message is set in the snackbar and
+  * the function returns without further execution. If all required fields are present, an attempt is
+  * made to reschedule the appointment using the provided data. If successful, a success message is set
+  * in the snackbar, the reschedule modal is closed, and a refetch is triggered. If an error occurs
+  * during the
+  */
   const handleConfirmReschedule = async () => {
     if (
       !rescheduleId ||
@@ -124,34 +157,46 @@ export function AppointmentsList() {
       !selectedStaff ||
       !selectedService ||
       !selectedTime
-    )
+    ) {
+      setSnackbar({
+        open: true,
+        message: "Please select all fields before confirming.",
+        severity: "warning",
+      });
       return;
+    }
 
     try {
-      await rescheduleAppointment({
+      const payload = {
         id: rescheduleId,
-        newStartTime: new Date(selectedTime),
-      }).unwrap();
+        newStartTime: selectedTime,
+        staffId: selectedStaff,
+        serviceId: selectedService,
+      };
+
+      await rescheduleAppointment(payload).unwrap();
+
       setSnackbar({
         open: true,
         message: "Appointment rescheduled successfully.",
         severity: "success",
       });
-      setRescheduleId(null);
-      setSelectedDate(null);
-      setSelectedStaff("");
-      setSelectedService("");
-      setSelectedTime("");
+
+      handleCloseReschedule();
       refetch();
-    } catch {
+    } catch (error: any) {
       setSnackbar({
         open: true,
-        message: "Failed to reschedule appointment.",
+        message: error?.data?.message || "Failed to reschedule appointment.",
         severity: "error",
       });
     }
   };
 
+/**
+ * The `handleCloseReschedule` function resets the state values for rescheduleId, selectedDate,
+ * selectedStaff, selectedService, and selectedTime to null or an empty string.
+ */
   const handleCloseReschedule = () => {
     setRescheduleId(null);
     setSelectedDate(null);
@@ -166,16 +211,40 @@ export function AppointmentsList() {
         Your Appointments
       </Typography>
 
-      {Array.isArray(appointmentsData?.data) &&
-      appointmentsData.data.length > 0 ? (
+      {appointmentsLoading ? (
+        // Skeleton loading state
         <Box
           sx={{
             display: "grid",
             gridTemplateColumns: isMdUp
               ? "1fr 1fr 1fr"
               : isSmUp
-                ? "1fr 1fr"
-                : "1fr",
+              ? "1fr 1fr"
+              : "1fr",
+            gap: 3,
+            mt: 2,
+          }}
+        >
+          {[...Array(3)].map((_, idx) => (
+            <Skeleton
+              key={idx}
+              variant="rectangular"
+              height={140}
+              animation="wave"
+              sx={{ borderRadius: 3 }}
+            />
+          ))}
+        </Box>
+      ) : Array.isArray(appointmentsData?.data) &&
+        appointmentsData.data.length > 0 ? (
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: isMdUp
+              ? "1fr 1fr 1fr"
+              : isSmUp
+              ? "1fr 1fr"
+              : "1fr",
             gap: 3,
             mt: 2,
           }}
@@ -210,10 +279,10 @@ export function AppointmentsList() {
                     appt.status === "scheduled"
                       ? "primary"
                       : appt.status === "completed"
-                        ? "success.main"
-                        : appt.status === "cancelled"
-                          ? "error.main"
-                          : "warning.main"
+                      ? "success.main"
+                      : appt.status === "cancelled"
+                      ? "error.main"
+                      : "warning.main"
                   }
                   fontWeight="bold"
                   sx={{ mt: "auto" }}
@@ -268,6 +337,36 @@ export function AppointmentsList() {
             />
           </LocalizationProvider>
 
+          <FormControl fullWidth>
+            <InputLabel>Staff</InputLabel>
+            <Select
+              value={selectedStaff}
+              onChange={(e) => setSelectedStaff(e.target.value)}
+              label="Staff"
+            >
+              {staffData?.data?.map((staff: any) => (
+                <MenuItem key={staff._id} value={staff._id}>
+                  {staff.user?.name || "Staff"}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth>
+            <InputLabel>Service</InputLabel>
+            <Select
+              value={selectedService}
+              onChange={(e) => setSelectedService(e.target.value)}
+              label="Service"
+            >
+              {servicesData?.data?.map((service: any) => (
+                <MenuItem key={service._id} value={service._id}>
+                  {service.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
           <FormControl fullWidth sx={{ mt: 2 }}>
             <InputLabel>Time</InputLabel>
             <Select
@@ -287,9 +386,7 @@ export function AppointmentsList() {
 
         <DialogActions>
           <Button onClick={handleCloseReschedule}>Cancel</Button>
-          <Button onClick={handleConfirmReschedule} disabled={!selectedTime}>
-            Confirm
-          </Button>
+          <Button onClick={handleConfirmReschedule}>Confirm</Button>
         </DialogActions>
       </Dialog>
 

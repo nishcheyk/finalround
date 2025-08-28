@@ -32,6 +32,8 @@ const schema = yup.object({
 
 type FormData = yup.InferType<typeof schema>;
 
+/* This code defines a functional component named `ResetPasswordForm` that handles the reset password
+functionality in a React application. Here's a breakdown of what the code does: */
 export default function ResetPasswordForm({ email }: { email: string }) {
   const [resetPassword, { isLoading }] = useResetPasswordMutation();
   const [showPassword, setShowPassword] = useState(false);
@@ -77,11 +79,11 @@ export default function ResetPasswordForm({ email }: { email: string }) {
           {error}
         </Alert>
       )}
-      
+
       <Typography variant="body2" color="text.secondary" mb={2}>
         Set a new password for <strong>{email}</strong>
       </Typography>
-      
+
       <form className={styles.form} onSubmit={handleSubmit(onSubmit)} noValidate>
         <TextField
           {...register("password")}

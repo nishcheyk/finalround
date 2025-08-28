@@ -15,6 +15,15 @@ database. Let's break down what each part of the schema is doing: */
   return otp;
 }
 
+/**
+ * The function `addMinutes` takes a `Date` object and a number of minutes, and returns a new `Date`
+ * object that is the specified number of minutes added to the input date.
+ * @param {Date} date - The `date` parameter is a `Date` object representing a specific point in time.
+ * @param {number} minutes - The `minutes` parameter in the `addMinutes` function represents the number
+ * of minutes that you want to add to the given date.
+ * @returns The function `addMinutes` returns a new `Date` object that is `minutes` added to the input
+ * `date`.
+ */
 function addMinutes(date: Date, minutes: number): Date {
   return new Date(date.getTime() + minutes * 60000);
 }

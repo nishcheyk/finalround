@@ -8,6 +8,9 @@ import appointmentRoutes from "./appointment/appointment.route";
 
 const router = Router();
 
+/* These lines of code are setting up routes for different modules in an Express application. Each
+`router.use` statement is associating a specific route path with the corresponding route handler
+defined in separate files. */
 router.use("/users", userRoutes);
 router.use("/otp", otpRoutes);
 router.use("/notifications", notificationRoutes);

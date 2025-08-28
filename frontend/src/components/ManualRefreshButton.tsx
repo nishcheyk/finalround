@@ -7,6 +7,9 @@ export default function ManualRefreshButton() {
   const [manualRefreshToken, { isLoading, error, data }] =
     useManualRefreshTokenMutation();
 
+/**
+ * The handleClick function handles manual token refresh in a TypeScript React application.
+ */
   const handleClick = async () => {
     try {
       const result = await manualRefreshToken().unwrap();

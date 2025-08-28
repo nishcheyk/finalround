@@ -39,6 +39,9 @@ interface NotificationFormDialogProps {
   onSubmit: () => Promise<void>;
 }
 
+/* This code snippet defines a functional component called `NotificationFormDialog` in TypeScript
+React. The component is a dialog form used for creating a new notification. Here's a breakdown of
+what the component does: */
 export const NotificationFormDialog: React.FC<NotificationFormDialogProps> = ({
   open,
   loading,

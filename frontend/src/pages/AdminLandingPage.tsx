@@ -10,6 +10,9 @@ interface FeatureCardProps {
   onClick: () => void;
 }
 
+/* The `const FeatureCard` is a functional component in TypeScript React that takes in props of type
+`FeatureCardProps`. It destructures the `title`, `description`, and `onClick` props from the
+`FeatureCardProps` object. */
 const FeatureCard: React.FC<FeatureCardProps> = ({
   title,
   description,
@@ -27,6 +30,9 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
   </Grid>
 );
 
+/* The `interface AdminLandingPageProps` is defining the prop types expected by the `AdminLandingPage`
+component in TypeScript React. Each property in this interface represents a function that takes no
+arguments and returns `void`. Here's a breakdown of each property: */
 interface AdminLandingPageProps {
   onSelectNotifications: () => void;
   onSelectUsers: () => void;
@@ -35,6 +41,10 @@ interface AdminLandingPageProps {
   onSelectServices?: () => void;
 }
 
+/* The `const AdminLandingPage` is a functional component in TypeScript React that takes in props of
+type `AdminLandingPageProps`. It destructures the props `onSelectNotifications`, `onSelectUsers`,
+`onSelectStats`, `onSelectAppointments`, and `onSelectServices` from the `AdminLandingPageProps`
+object. */
 const AdminLandingPage: React.FC<AdminLandingPageProps> = ({
   onSelectNotifications,
   onSelectUsers,

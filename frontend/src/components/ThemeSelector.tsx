@@ -7,6 +7,9 @@ import styles from "../styles/ThemeStyle.module.css";
 import { useAppSelector, useAppDispatch } from "../store/hooks";
 import { setMode } from "../store/themeSlice";
 import { ThemeMode } from "../store/themeSlice";
+/* This code defines a functional component called `StatsCards` in TypeScript React. The component
+takes in props of type `StatsCardsProps`, which includes an optional `stats` object with `total`,
+`global`, and `today` number properties, and a `loading` boolean property. */
 
 export function ColorThemeSwitcher() {
   const [open, setOpen] = useState(false);
@@ -58,6 +61,14 @@ export function ColorThemeSwitcher() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
+/**
+ * The `SignupForm` function in TypeScript React handles user registration with form validation and
+ * submission logic.
+ * @returns The `SignupForm` component is being returned. It is a functional component that renders a
+ * signup form with input fields for name, email, phone number, password, and confirm password. The
+ * form includes validation for each input field and a submit button for signing up a new user. The
+ * form also includes a link to navigate to the login page if the user already has an account.
+ */
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
             className="absolute mt-60 rounded-xl bg-muted shadow-lg outline-none z-50"

@@ -45,6 +45,18 @@ interface NotificationListProps {
   loading: boolean;
 }
 
+/**
+ * The function `getNotificationIcon` returns a specific icon component based on the provided
+ * notification type.
+ * @param {NotificationType} type - The `type` parameter in the `getNotificationIcon` function is of
+ * type `NotificationType`. It is used to determine which icon component to return based on the type of
+ * notification. The function uses a switch statement to check the value of `type` and return the
+ * corresponding icon component.
+ * @returns The `getNotificationIcon` function returns an icon component based on the `type` of
+ * notification provided. The returned icon component varies depending on the `type` parameter:
+ * - If the `type` is "info", it returns an `<InfoIcon>` component with color set to "info".
+ * - If the `type` is "warning", it returns a `<WarningIcon>` component with color set
+ */
 const getNotificationIcon = (type: NotificationType) => {
   switch (type) {
     case "info":
@@ -60,6 +72,14 @@ const getNotificationIcon = (type: NotificationType) => {
   }
 };
 
+/**
+ * The function `getPriorityColor` takes a priority type as input and returns a corresponding color
+ * based on the priority level.
+ * @param {PriorityType} priority - PriorityType
+ * @returns The `getPriorityColor` function returns a color based on the priority level provided as an
+ * argument. If the priority is "high", it returns "error", if it is "medium", it returns "warning", if
+ * it is "low", it returns "info", and for any other value, it returns "default".
+ */
 const getPriorityColor = (priority: PriorityType) => {
   switch (priority) {
     case "high":
@@ -73,6 +93,9 @@ const getPriorityColor = (priority: PriorityType) => {
   }
 };
 
+/* The code snippet you provided defines a React functional component called `NotificationList`. This
+component takes in props of type `NotificationListProps` which includes an array of notifications, a
+boolean flag for deleting, functions for onDelete and onViewReadStatus, and a loading flag. */
 export const NotificationList: React.FC<NotificationListProps> = ({
   notifications,
   deleting,

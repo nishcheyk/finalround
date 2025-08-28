@@ -7,10 +7,12 @@ interface LoadingSpinnerProps {
   fullScreen?: boolean;
 }
 
-const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ 
-  message = "Loading...", 
-  size = 40, 
-  fullScreen = false 
+/* This code defines a React functional component called `LoadingSpinner` that displays a loading
+spinner with an optional message. Here's a breakdown of what the code is doing: */
+const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
+  message = "Loading...",
+  size = 40,
+  fullScreen = false
 }) => {
   const content = (
     <Box

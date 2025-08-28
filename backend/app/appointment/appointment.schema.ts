@@ -18,6 +18,8 @@ export interface IAppointment {
 
 export interface IAppointmentDocument extends IAppointment, Document {}
 
+/* This code snippet is defining a Mongoose schema for the `Appointment` model in a TypeScript
+environment. Let's break down what each part of the schema is doing: */
 const AppointmentSchema: Schema<IAppointmentDocument> = new Schema(
   {
     user: { type: Schema.Types.ObjectId, ref: "User", required: true },
@@ -37,6 +39,8 @@ const AppointmentSchema: Schema<IAppointmentDocument> = new Schema(
 
 AppointmentSchema.index({ staff: 1, startTime: 1 }, { unique: true });
 
+/* This line of code is exporting a Mongoose model for the `Appointment` collection in the MongoDB
+database. */
 export default mongoose.model<IAppointmentDocument>(
   "Appointment",
   AppointmentSchema

@@ -14,13 +14,13 @@ const router = express.Router();
 an Express application using TypeScript. Here's a breakdown of what each part is doing: */
 router.post(
   "/send-otp",
-  resetPasswordLimiter,
+
   validate(otpValidation),
   sendOTPController
 );
 router.post(
   "/verify-otp",
-  resetPasswordLimiter,
+
   validate(verifyOtpValidation),
   verifyOTPController
 );
