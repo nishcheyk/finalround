@@ -63,7 +63,10 @@ export const getUserAppointments = asyncHandler(
 
 export const getAllAppointments = asyncHandler(
   async (req: Request, res: Response) => {
+    // Use the service to fetch all appointments
     const appointments = await AppointmentService.findAll();
+
+    // Send success response with appointments data array
     res.status(200).json({ success: true, data: appointments });
   }
 );

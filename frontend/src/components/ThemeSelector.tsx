@@ -60,7 +60,7 @@ export function ColorThemeSwitcher() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="absolute mt-1 rounded-xl bg-muted shadow-lg outline-none z-50"
+            className="absolute mt-60 rounded-xl bg-muted shadow-lg outline-none z-50"
             style={{ width: "200px", height: "195px" }}
           >
             <PopoverForm
@@ -107,6 +107,6 @@ export function ColorThemeSwitcher() {
 
 // Keep the memoized version for backward compatibility
 const ThemeSelector = memo(ColorThemeSwitcher);
-ThemeSelector.displayName = 'ThemeSelector';
+ThemeSelector.displayName = "ThemeSelector";
 
 export { ThemeSelector };

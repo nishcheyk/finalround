@@ -18,15 +18,11 @@ import { motion } from "framer-motion";
 import {
   useGetServicesQuery,
   useGetStaffQuery,
-  useGetAvailabilityQuery,
+  useGetBusySlotsForStaffQuery,
   useCreateAppointmentMutation,
 } from "../services/api";
 
-interface BookingFormProps {
-  onBookingSuccess?: () => void;
-}
-
-export function BookingForm({ onBookingSuccess }: BookingFormProps) {
+export default function BookingForm() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedService, setSelectedService] = useState("");
   const [selectedStaff, setSelectedStaff] = useState("");
@@ -41,35 +37,35 @@ export function BookingForm({ onBookingSuccess }: BookingFormProps) {
     useGetServicesQuery();
   const { data: staffData, isLoading: staffLoading } = useGetStaffQuery();
 
-  const shouldFetchSlots = selectedService && selectedStaff && selectedDate;
-  const { data: slotsData, isLoading: slotsLoading } = useGetAvailabilityQuery(
-    {
-      staffId: selectedStaff,
-      serviceId: selectedService,
-      date: selectedDate ? selectedDate.toISOString() : "",
-    },
-    { skip: !shouldFetchSlots, refetchOnMountOrArgChange: true }
-  );
+  const { data: busySlotsData, isLoading: busySlotsLoading } =
+    useGetBusySlotsForStaffQuery(
+      {
+        staffId: selectedStaff,
+        date: selectedDate ? selectedDate.toISOString().substring(0, 10) : "",
+      },
+      { skip: !selectedStaff || !selectedDate }
+    );
 
   const [createAppointment, { isLoading: booking }] =
     useCreateAppointmentMutation();
 
   const slotOptions = useMemo(() => {
     if (!selectedDate || !selectedService || !servicesData) return [];
+
     const service = servicesData.data?.find(
       (s: any) => s._id === selectedService
     );
     if (!service) return [];
+
     const duration = service.duration;
     const startHour = 9;
     const endHour = 22;
     const baseDate = new Date(selectedDate);
     baseDate.setHours(0, 0, 0, 0);
-    const bookedSet = new Set(
-      (slotsData?.bookedSlots || []).map((bs: any) =>
-        new Date(bs).toISOString()
-      )
-    );
+
+    // busySlotsData.data is array of ISO strings representing busy start times
+    const busySet = new Set(busySlotsData?.data || []);
+
     const slots = [];
     for (
       let mins = startHour * 60;
@@ -78,27 +74,31 @@ export function BookingForm({ onBookingSuccess }: BookingFormProps) {
     ) {
       const slotDate = new Date(baseDate.getTime() + mins * 60000);
       const slotISO = slotDate.toISOString();
-      slots.push({
-        value: slotISO,
-        label: slotDate.toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        booked: bookedSet.has(slotISO),
-        date: slotDate,
-      });
+
+      // Only add slot if it is NOT in busySet (i.e., not booked)
+      if (!busySet.has(slotISO)) {
+        slots.push({
+          value: slotISO,
+          label: slotDate.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        });
+      }
     }
     return slots;
-  }, [slotsData, selectedDate, selectedService, servicesData]);
+  }, [busySlotsData, selectedDate, selectedService, servicesData]);
 
   const handleBook = async () => {
     if (!selectedSlot) return;
+
     try {
       await createAppointment({
         staffId: selectedStaff,
         serviceId: selectedService,
         startTime: selectedSlot,
       }).unwrap();
+
       setSnackbar({
         open: true,
         message: "Appointment booked successfully!",
@@ -155,13 +155,16 @@ export function BookingForm({ onBookingSuccess }: BookingFormProps) {
       <LocalizationProvider dateAdapter={AdapterDateFns}>
         <DateCalendar
           value={selectedDate}
-          onChange={(newDate) => setSelectedDate(newDate)}
+          onChange={(newDate) => {
+            setSelectedDate(newDate);
+            setSelectedSlot(null);
+          }}
           disablePast
           sx={{ mb: 3 }}
         />
       </LocalizationProvider>
 
-      {slotsLoading && (
+      {busySlotsLoading && (
         <CircularProgress sx={{ display: "block", mx: "auto", my: 2 }} />
       )}
 
@@ -180,23 +183,15 @@ export function BookingForm({ onBookingSuccess }: BookingFormProps) {
                 const slot = slotOptions.find(
                   (s) => s.value === e.target.value
                 );
-                if (slot && !slot.booked) setSelectedSlot(slot.date);
+                if (slot) setSelectedSlot(new Date(slot.value));
               }}
-              disabled={slotsLoading}
-              renderValue={(value) => {
-                const slot = slotOptions.find((s) => s.value === value);
-                return slot
-                  ? slot.label + (slot.booked ? " (Booked)" : "")
-                  : "Select Time";
-              }}
+              disabled={busySlotsLoading}
             >
-              {slotOptions
-                .filter((slot) => !slot.booked) // filter out booked slots
-                .map((slot) => (
-                  <MenuItem key={slot.value} value={slot.value}>
-                    {slot.label}
-                  </MenuItem>
-                ))}
+              {slotOptions.map((slot) => (
+                <MenuItem key={slot.value} value={slot.value}>
+                  {slot.label}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
 
@@ -211,14 +206,17 @@ export function BookingForm({ onBookingSuccess }: BookingFormProps) {
               >
                 {booking
                   ? "Booking..."
-                  : `Confirm Booking for ${selectedSlot.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
+                  : `Confirm Booking for ${selectedSlot.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}`}
               </Button>
             </Box>
           )}
         </motion.div>
       )}
 
-      {slotOptions.length === 0 && selectedDate && (
+      {slotOptions.length === 0 && selectedDate && !busySlotsLoading && (
         <Typography color="text.secondary" sx={{ mt: 3 }}>
           No available slots for the selected date, staff, and service. Please
           select another date or staff.

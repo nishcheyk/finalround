@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Box,
   Button,
@@ -7,12 +7,26 @@ import {
   Alert,
   useMediaQuery,
   useTheme,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  CircularProgress,
 } from "@mui/material";
 import { motion } from "framer-motion";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import {
+  useGetStaffQuery,
+  useGetServicesQuery,
   useCancelAppointmentMutation,
-  useGetUserAppointmentsQuery,
   useRescheduleAppointmentMutation,
+  useGetUserAppointmentsQuery,
 } from "../services/api";
 
 export function AppointmentsList() {
@@ -24,13 +38,58 @@ export function AppointmentsList() {
   const [cancelAppointment] = useCancelAppointmentMutation();
   const [rescheduleAppointment] = useRescheduleAppointmentMutation();
 
+  const { data: staffData } = useGetStaffQuery();
+  const { data: servicesData } = useGetServicesQuery();
+
+  // Reschedule dialog state
   const [rescheduleId, setRescheduleId] = useState<string | null>(null);
-  const [newRescheduleTime, setNewRescheduleTime] = useState("");
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedStaff, setSelectedStaff] = useState("");
+  const [selectedService, setSelectedService] = useState("");
+  const [selectedTime, setSelectedTime] = useState("");
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
     severity: "success",
   });
+
+  const slotOptions = useMemo(() => {
+    if (!selectedDate) return [];
+
+    const startHour = 9;
+    const endHour = 22; // show slots only 9 to 10 AM
+    const duration = 30; // 30 mins slot duration
+    const baseDate = new Date(selectedDate);
+    baseDate.setHours(0, 0, 0, 0);
+
+    const slots = [];
+    for (
+      let mins = startHour * 60;
+      mins + duration <= endHour * 60;
+      mins += duration
+    ) {
+      const slotDate = new Date(baseDate.getTime() + mins * 60000);
+      const slotISO = slotDate.toISOString();
+      slots.push({
+        value: slotISO,
+        label: slotDate.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      });
+    }
+    return slots;
+  }, [selectedDate]);
+
+  // Reset selectedTime if it is not a valid option to avoid MUI warning
+  useEffect(() => {
+    if (
+      selectedTime &&
+      !slotOptions.some((slot) => slot.value === selectedTime)
+    ) {
+      setSelectedTime("");
+    }
+  }, [slotOptions, selectedTime]);
 
   const handleCancel = async (appointmentId: string) => {
     try {
@@ -50,17 +109,28 @@ export function AppointmentsList() {
     }
   };
 
-  const handleStartReschedule = (appointmentId: string) => {
-    setRescheduleId(appointmentId);
-    setNewRescheduleTime("");
+  const handleOpenReschedule = (appointment: any) => {
+    setRescheduleId(appointment._id);
+    setSelectedDate(new Date(appointment.startTime));
+    setSelectedStaff(appointment.staffId);
+    setSelectedService(appointment.serviceId);
+    setSelectedTime(new Date(appointment.startTime).toISOString());
   };
 
   const handleConfirmReschedule = async () => {
-    if (!rescheduleId || !newRescheduleTime) return;
+    if (
+      !rescheduleId ||
+      !selectedDate ||
+      !selectedStaff ||
+      !selectedService ||
+      !selectedTime
+    )
+      return;
+
     try {
       await rescheduleAppointment({
         id: rescheduleId,
-        newStartTime: new Date(newRescheduleTime),
+        newStartTime: new Date(selectedTime),
       }).unwrap();
       setSnackbar({
         open: true,
@@ -68,7 +138,10 @@ export function AppointmentsList() {
         severity: "success",
       });
       setRescheduleId(null);
-      setNewRescheduleTime("");
+      setSelectedDate(null);
+      setSelectedStaff("");
+      setSelectedService("");
+      setSelectedTime("");
       refetch();
     } catch {
       setSnackbar({
@@ -79,9 +152,12 @@ export function AppointmentsList() {
     }
   };
 
-  const handleCancelReschedule = () => {
+  const handleCloseReschedule = () => {
     setRescheduleId(null);
-    setNewRescheduleTime("");
+    setSelectedDate(null);
+    setSelectedStaff("");
+    setSelectedService("");
+    setSelectedTime("");
   };
 
   return (
@@ -89,7 +165,9 @@ export function AppointmentsList() {
       <Typography variant="h5" gutterBottom>
         Your Appointments
       </Typography>
-      {appointmentsData?.data?.length ? (
+
+      {Array.isArray(appointmentsData?.data) &&
+      appointmentsData.data.length > 0 ? (
         <Box
           sx={{
             display: "grid",
@@ -152,36 +230,13 @@ export function AppointmentsList() {
                   >
                     Cancel
                   </Button>
-
-                  {rescheduleId === appt._id ? (
-                    <>
-                      <input
-                        type="datetime-local"
-                        value={newRescheduleTime}
-                        onChange={(e) => setNewRescheduleTime(e.target.value)}
-                        style={{ flexGrow: 1 }}
-                      />
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={handleConfirmReschedule}
-                        disabled={!newRescheduleTime}
-                      >
-                        Confirm
-                      </Button>
-                      <Button variant="text" onClick={handleCancelReschedule}>
-                        Cancel
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      variant="outlined"
-                      onClick={() => handleStartReschedule(appt._id)}
-                      disabled={appt.status === "cancelled"}
-                    >
-                      Reschedule
-                    </Button>
-                  )}
+                  <Button
+                    variant="outlined"
+                    onClick={() => handleOpenReschedule(appt)}
+                    disabled={appt.status === "cancelled"}
+                  >
+                    Reschedule
+                  </Button>
                 </Box>
               </Box>
             </motion.div>
@@ -190,6 +245,53 @@ export function AppointmentsList() {
       ) : (
         <Typography>No appointments found</Typography>
       )}
+
+      <Dialog
+        open={Boolean(rescheduleId)}
+        onClose={handleCloseReschedule}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Reschedule Appointment</DialogTitle>
+        <DialogContent
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+          }}
+        >
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <DateCalendar
+              value={selectedDate}
+              onChange={setSelectedDate}
+              disablePast
+            />
+          </LocalizationProvider>
+
+          <FormControl fullWidth sx={{ mt: 2 }}>
+            <InputLabel>Time</InputLabel>
+            <Select
+              value={selectedTime}
+              onChange={(e) => setSelectedTime(e.target.value)}
+              label="Time"
+              disabled={!selectedDate}
+            >
+              {slotOptions.map((slot) => (
+                <MenuItem key={slot.value} value={slot.value}>
+                  {slot.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={handleCloseReschedule}>Cancel</Button>
+          <Button onClick={handleConfirmReschedule} disabled={!selectedTime}>
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar
         open={snackbar.open}

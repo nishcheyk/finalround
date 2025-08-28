@@ -6,7 +6,7 @@ import User, { IUser } from "../users/user.schema";
 import { addMinutes } from "../common/utils/time.util";
 import notificationQueue from "../common/services/bull-queue.service";
 import { Types } from "mongoose";
-
+import mongoose from "mongoose";
 // Type guard for IUser (populated user)
 function isUserPopulated(user: Types.ObjectId | IUser): user is IUser {
   return !!(user as IUser).name;
@@ -277,5 +277,21 @@ export class AppointmentService {
       .populate({ path: "staff", populate: { path: "user", select: "name" } })
       .populate("user", "name email")
       .sort({ startTime: "desc" });
+  }
+
+  static async findBusySlotsForStaff(staffId: string, date: string) {
+    // Parse the date string to get start of day and end of day
+    const dayStart = new Date(date);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(date);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    return Appointment.find({
+      staff: new mongoose.Types.ObjectId(staffId),
+      status: { $ne: "cancelled" },
+      startTime: { $gte: dayStart, $lte: dayEnd },
+    })
+      .select("startTime")
+      .lean();
   }
 }

@@ -1,4 +1,188 @@
-# Full Stack Event Booking & Notification Platform
+# Booking App – Full Stack Assessment
+
+## Overview
+A robust, production-ready booking system with:
+- **Admin, Staff, and Customer separation**
+- **Notifications via Email, SMS, and In-App**
+- **Appointment booking, rescheduling, and management**
+- **Secure authentication and role-based access**
+- **Modern, elegant frontend (React + MUI + RTK Query)**
+- **Scalable backend (Node.js + Express + MongoDB + Bull Queue + Redis)**
+
+---
+
+## Features
+
+### 1. User Roles & Permissions
+- **Admin**: Full control. Can manage users, staff, services, appointments, and view all notifications.
+- **Staff**: Can view/manage their own appointments, receive notifications.
+- **Customer**: Can book, view, and manage their own appointments, receive notifications.
+
+### 2. Notification System (3-Way)
+- **In-App Notification**: Delivered to user dashboard (real-time, unread/read tracking).
+- **Email Notification**: Sent via SMTP (configurable in `.env`).
+- **SMS Notification**: Sent via Twilio (configurable in `.env`).
+- **All notifications are queued and processed reliably using Bull and Redis.**
+
+#### Example: Appointment Booking
+- When a customer books or reschedules an appointment:
+  - **Customer and Staff** both receive:
+    - In-app notification
+    - Email
+    - SMS
+- Admin can view all notifications and stats.
+
+---
+
+## Backend
+
+### Tech Stack
+- Node.js, Express, TypeScript
+- MongoDB (Mongoose ODM)
+- Bull Queue + Redis (for async jobs)
+- Nodemailer (Email), Twilio (SMS)
+
+### Key Modules
+- `users/` – User schema, role management, authentication
+- `appointment/` – Appointment schema, booking, rescheduling, reminders
+- `notifications/` – Notification schema, service, controller, queue logic
+- `common/services/` – Email, SMS, queue processors, helpers
+
+### Notification Flow (Code Snippet)
+```ts
+// Enqueue notification (in notification.service.ts or appointment.service.ts)
+notificationQueue.add("sendNotificationEmail", { ... });
+notificationQueue.add("sendNotificationSMS", { ... });
+// In queueProcessors.ts
+notificationQueue.process("sendNotificationEmail", async (job) => sendEmail(job.data));
+notificationQueue.process("sendNotificationSMS", async (job) => sendSMS(job.data.to, job.data.body));
+```
+
+### Appointment Booking Flow
+- **POST /appointments**: Authenticated users can book an appointment.
+- **POST /appointments/availability**: Get available slots for staff/service/date.
+- **PATCH /appointments/:id/reschedule**: Reschedule an appointment (with notification to all parties).
+- **All actions trigger notifications (in-app, email, SMS) to relevant users.**
+
+### Security & Middleware
+- **JWT Authentication**: All protected routes require a valid JWT.
+- **Role Middleware**: Restricts access to admin/staff/customer endpoints.
+- **Validation Middleware**: Validates request bodies (using Joi/Zod or custom logic).
+- **Rate Limiting**: Prevents brute-force and abuse (configurable).
+- **CORS**: Configured for secure frontend-backend communication.
+
+### Database Handling
+- **Mongoose Schemas**: Strict typing, validation, and indexing (e.g., unique appointment slots).
+- **Transactions**: Used for critical multi-step operations.
+- **Lean Queries**: Used for performance where possible.
+
+---
+
+## Frontend
+
+### Tech Stack
+- React + TypeScript
+- MUI (Material UI)
+- RTK Query (Redux Toolkit Query) for API calls
+- Framer Motion for animation
+
+### Auth & Security
+- **JWT stored in HttpOnly cookies** (recommended) or localStorage.
+- **Protected Routes**: React Router guards based on auth/role.
+- **Error Boundaries**: For robust error handling.
+
+### Booking UI
+- **Modern, card-based appointment display**
+- **Dropdown for time selection, skeleton loaders, responsive design**
+- **Notification dropdown with unread count**
+- **Admin dashboard for managing users, staff, services, and appointments**
+
+### Example: Booking Flow (Frontend)
+```tsx
+// Book appointment (RTK Query)
+const [bookAppointment] = useBookAppointmentMutation();
+const handleBook = () => bookAppointment({ staffId, serviceId, startTime });
+// Notification dropdown
+<NotificationDropdown />
+```
+
+---
+
+## Environment Variables (`.env`)
+```env
+PORT=3000
+MONGODB_URI=mongodb://localhost:27017/booking-app
+JWT_SECRET=your_jwt_secret_key
+REDIS_URL=redis://localhost:6379
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your@email.com
+SMTP_PASS=your_email_password
+MAIL_FROM="Event Booking <your@email.com>"
+TWILIO_SID=your_twilio_sid
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+TWILIO_PHONE=+1xxxxxxxxxx
+```
+
+---
+
+## How to Run
+1. **Start Redis**: `redis-server`
+2. **Start Backend**: `npm run dev` (or `npx ts-node index.ts`)
+3. **Start Queue Processor**: `npx ts-node app/common/services/queueProcessors.ts`
+4. **Start Frontend**: `npm run dev` (in `frontend/`)
+
+---
+
+## API Routes (Backend)
+- `/api/auth/*` – Signup, login, password reset, OTP
+- `/api/appointments/*` – Book, reschedule, cancel, get availability
+- `/api/notifications/*` – Get, mark as read, unread count, stats
+- `/api/users/*` – User management (admin only)
+- `/api/services/*` – Service management (admin only)
+- `/api/staff/*` – Staff management (admin only)
+
+---
+
+## Middleware (Backend)
+- **authMiddleware**: Checks JWT, attaches user to request
+- **roleMiddleware**: Checks user role (admin/staff/customer)
+- **validationMiddleware**: Validates request body/query/params
+- **errorHandler**: Catches and formats errors
+
+---
+
+## Security
+- **All sensitive actions require authentication and correct role**
+- **Passwords are hashed (bcrypt)**
+- **JWTs are signed and verified**
+- **Rate limiting and CORS are enabled**
+
+---
+
+## Data Handling
+- **All user and appointment data is validated and sanitized**
+- **Unique indexes prevent double booking**
+- **Lean queries and population for performance**
+
+---
+
+## Admin Powers
+- **Admins can manage all users, staff, services, and appointments**
+- **Admins can send global notifications (in-app, email, SMS) to all users**
+- **Admins can view notification stats and logs**
+
+---
+
+## Troubleshooting
+- **No email/SMS?** Ensure `.env` is loaded and queue processor is running
+- **Redis errors?** Make sure Redis is running and accessible
+- **Role errors?** Check user roles and JWTs
+
+---
+
+## License
+MIT# Full Stack Event Booking & Notification Platform
 
 ## Table of Contents
 
