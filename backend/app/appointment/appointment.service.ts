@@ -5,77 +5,46 @@ import Service from "../services/service.schema";
 import User from "../users/user.schema";
 import { timeToMinutes, addMinutes } from "../common/utils/time.util";
 import { notificationQueue } from "../common/services/notification.service";
+interface AvailabilityResponse {
+  bookedSlots: Date[];
+}
 
 export class AppointmentService {
   /**
    * Calculates available appointment slots for a given staff, service, and date.
    */
-  static async getAvailability(staffId: string, serviceId: string, date: Date) {
-    const dayOfWeek = date.getDay();
+  static async getAvailability(
+    staffId: string,
+    serviceId: string,
+    date: Date
+  ): Promise<AvailabilityResponse> {
     date.setHours(0, 0, 0, 0);
 
+    // Fetch staff and service as before
     const staff = await Staff.findById(staffId);
     if (!staff) throw createHttpError(404, "Staff not found");
 
     const service = await Service.findById(serviceId);
     if (!service) throw createHttpError(404, "Service not found");
 
-    // Find staff's working hours for the given day
-    const availability = staff.availability.find(
-      (a) => a.dayOfWeek === dayOfWeek
-    );
-    if (!availability) {
-      return []; // Staff not available on this day
-    }
-
-    // Get all appointments for this staff on the given day
     const startOfDay = new Date(date);
     const endOfDay = new Date(date);
     endOfDay.setDate(endOfDay.getDate() + 1);
 
+    // existing appointments (booked slots)
     const existingAppointments = await Appointment.find({
       staff: staffId,
       startTime: { $gte: startOfDay, $lt: endOfDay },
       status: "scheduled",
     }).sort({ startTime: "asc" });
 
-    const serviceDuration = service.duration;
-    const availableSlots: Date[] = [];
+    const bookedSlots: Date[] = existingAppointments.map(
+      (appt) => appt.startTime
+    );
 
-    const staffStartTime = timeToMinutes(availability.startTime);
-    const staffEndTime = timeToMinutes(availability.endTime);
-
-    // Iterate through the staff's working day by service duration increments
-    for (
-      let slotStart = staffStartTime;
-      slotStart < staffEndTime;
-      slotStart += serviceDuration
-    ) {
-      const slotEnd = slotStart + serviceDuration;
-
-      // Slot must end within working hours
-      if (slotEnd > staffEndTime) continue;
-
-      const slotStartTime = addMinutes(new Date(date), slotStart);
-      const slotEndTime = addMinutes(new Date(date), slotEnd);
-
-      // Check for conflicts with existing appointments
-      const isConflict = existingAppointments.some((appt) => {
-        const apptStartTime = appt.startTime.getTime();
-        const apptEndTime = appt.endTime.getTime();
-        // Conflict if the new slot overlaps with an existing appointment
-        return (
-          slotStartTime.getTime() < apptEndTime &&
-          slotEndTime.getTime() > apptStartTime
-        );
-      });
-
-      if (!isConflict) {
-        availableSlots.push(slotStartTime);
-      }
-    }
-
-    return availableSlots;
+    return {
+      bookedSlots,
+    };
   }
 
   /**
@@ -96,6 +65,7 @@ export class AppointmentService {
     if (!user) throw createHttpError(404, "User not found");
     if (!staff) throw createHttpError(404, "Staff not found");
     if (!service) throw createHttpError(404, "Service not found");
+    // No check for staff.services includes serviceId: allow any staff to be booked for any service
 
     const endTime = addMinutes(new Date(startTime), service.duration);
 
@@ -120,8 +90,6 @@ export class AppointmentService {
       }
       throw error;
     }
-
-    // --- Add jobs to the notification queue ---
 
     // 1. Send immediate confirmation
 

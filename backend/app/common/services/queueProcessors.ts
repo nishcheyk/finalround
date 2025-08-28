@@ -3,29 +3,29 @@ import { sendEmail } from "./email.service";
 import { sendSMS } from "./sms.service";
 import { Job } from "bull";
 
-// --- Job Processor for Admin Notification Email ---
+// Process admin notification email jobs
 notificationQueue.process("sendNotificationEmail", async (job: Job) => {
   const { to, subject, html } = job.data;
   try {
     await sendEmail({ to, subject, html });
-    console.log(`Admin notification email sent to ${to}`);
+    console.log(`Notification email sent to ${to}`);
   } catch (error) {
-    console.error(`Failed to send admin notification email to ${to}:`, error);
+    console.error(`Failed to send notification email to ${to}`, error);
   }
 });
 
-// --- Job Processor for Admin Notification SMS ---
+// Process admin notification SMS jobs
 notificationQueue.process("sendNotificationSMS", async (job: Job) => {
   const { to, body } = job.data;
   try {
     await sendSMS(to, body);
-    console.log(`Admin notification SMS sent to ${to}`);
+    console.log(`Notification SMS sent to ${to}`);
   } catch (error) {
-    console.error(`Failed to send admin notification SMS to ${to}:`, error);
+    console.error(`Failed to send notification SMS to ${to}`, error);
   }
 });
 
-// --- Job Processor for Appointment Confirmation ---
+// Process appointment confirmation jobs
 notificationQueue.process("sendAppointmentConfirmation", async (job: Job) => {
   const {
     userEmail,
@@ -41,21 +41,19 @@ notificationQueue.process("sendAppointmentConfirmation", async (job: Job) => {
     timeStyle: "short",
   });
 
-  // 1. Send Email Confirmation
   if (userEmail) {
     try {
       const emailHtml = `
         <div style="font-family: sans-serif; line-height: 1.5;">
           <h1>Appointment Confirmed!</h1>
           <p>Dear ${userName},</p>
-          <p>Your appointment has been successfully scheduled. Here are the details:</p>
-          <hr>
-          <p><b>Service:</b> ${serviceName}</p>
-          <p><b>With:</b> ${staffName}</p>
-          <p><b>When:</b> ${formattedTime}</p>
-          <hr>
-          <p>If you need to cancel or reschedule, please contact us.</p>
-          <p>We look forward to seeing you!</p>
+          <p>Your appointment details:</p>
+          <ul>
+            <li><b>Service:</b> ${serviceName}</li>
+            <li><b>With:</b> ${staffName}</li>
+            <li><b>When:</b> ${formattedTime}</li>
+          </ul>
+          <p>If you need to change, please contact us.</p>
         </div>
       `;
       await sendEmail({
@@ -65,24 +63,17 @@ notificationQueue.process("sendAppointmentConfirmation", async (job: Job) => {
       });
       console.log(`Appointment confirmation email sent to ${userEmail}`);
     } catch (error) {
-      console.error(
-        `Failed to send appointment confirmation email to ${userEmail}:`,
-        error
-      );
+      console.error(`Failed to send appointment email to ${userEmail}`, error);
     }
   }
 
-  // 2. Send SMS Confirmation
   if (userPhone) {
     try {
-      const smsBody = `Hi ${userName}, your appointment for ${serviceName} with ${staffName} is confirmed for ${formattedTime}.`;
+      const smsBody = `Hi ${userName}, your appointment for ${serviceName} with ${staffName} at ${formattedTime} is confirmed.`;
       await sendSMS(userPhone, smsBody);
       console.log(`Appointment confirmation SMS sent to ${userPhone}`);
     } catch (error) {
-      console.error(
-        `Failed to send appointment confirmation SMS to ${userPhone}:`,
-        error
-      );
+      console.error(`Failed to send appointment SMS to ${userPhone}`, error);
     }
   }
 });

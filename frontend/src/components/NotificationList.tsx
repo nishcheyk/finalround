@@ -141,7 +141,7 @@ export const NotificationList: React.FC<NotificationListProps> = ({
                 </Typography>
                 <Box display="flex" alignItems="center" gap={2}>
                   <Typography variant="caption" color="textSecondary">
-                    Sent by: {notification.sender.name}
+                    Sent by: {notification.sender.name || "Unknown sender"}
                   </Typography>
                   <Typography variant="caption" color="textSecondary">
                     {formatDistanceToNow(new Date(notification.createdAt), {

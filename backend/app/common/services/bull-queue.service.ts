@@ -1,8 +1,12 @@
 import Bull from "bull";
-import redisClient from "./redis.service";
+
+const redisConfig = {
+  host: process.env.REDIS_HOST || "127.0.0.1",
+  port: Number(process.env.REDIS_PORT) || 6379,
+};
 
 const notificationQueue = new Bull("notifications", {
-  redis: { host: "127.0.0.1", port: 6379 },
+  redis: redisConfig,
 });
 
 export default notificationQueue;

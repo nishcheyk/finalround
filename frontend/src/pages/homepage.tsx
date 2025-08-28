@@ -14,6 +14,9 @@ const images = [
 const HomeComponent = () => {
   return (
     <>
+      <Box sx={{ mt: 6 }}>
+        <AppointmentBookingPage />
+      </Box>
       <div className="pt-40">
         <CardCarousel
           images={images}
@@ -26,13 +29,6 @@ const HomeComponent = () => {
         <Typography textAlign="center" m={10} variant="h6">
           Homepageeeee
         </Typography>
-      </Box>
-      <ManualRefreshButton />
-      <Box sx={{ mt: 6 }}>
-        <AppointmentBookingPage />
-      </Box>
-      <Box sx={{ mt: 6 }}>
-        <MyAppointmentsPage />
       </Box>
     </>
   );

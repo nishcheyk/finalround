@@ -62,7 +62,7 @@ class ErrorBoundary extends Component<Props, State> {
             <Typography variant="h4" gutterBottom color="error">
               Oops! Something went wrong
             </Typography>
-            <Typography variant="body1" color="text.secondary" mb={3}>
+            <Typography variant="body1" color="text.primary" mb={3}>
               We're sorry, but something unexpected happened. Please try
               refreshing the page or contact support if the problem persists.
             </Typography>
@@ -77,11 +77,11 @@ class ErrorBoundary extends Component<Props, State> {
                   textAlign: "left",
                 }}
               >
-                <Typography variant="subtitle2" gutterBottom>
+                <Typography variant="subtitle1" gutterBottom>
                   Error Details (Development):
                 </Typography>
                 <Typography
-                  variant="body2"
+                  variant="subtitle1"
                   component="pre"
                   sx={{ fontSize: "0.75rem" }}
                 >

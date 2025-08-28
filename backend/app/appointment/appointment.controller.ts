@@ -3,18 +3,6 @@ import asyncHandler from "express-async-handler";
 import { AppointmentService } from "./appointment.service";
 import { AuthenticatedUser } from "../types/express";
 
-export const checkAvailability = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { staffId, serviceId, date } = req.body;
-    const slots = await AppointmentService.getAvailability(
-      staffId,
-      serviceId,
-      date
-    );
-    res.status(200).json({ success: true, data: slots });
-  }
-);
-
 export const createAppointment = asyncHandler(
   async (req: Request, res: Response) => {
     const user = req.user as AuthenticatedUser;
@@ -30,5 +18,14 @@ export const getUserAppointments = asyncHandler(
     res.status(200).json({ success: true, data: appointments });
   }
 );
-
-// NOTE: You would also add controllers for cancelling/rescheduling here.
+export const checkAvailability = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { staffId, serviceId, date } = req.body;
+    const slots = await AppointmentService.getAvailability(
+      staffId,
+      serviceId,
+      new Date(date)
+    );
+    res.status(200).json({ success: true, data: slots }); // data: { availableSlots: [], bookedSlots: [] }
+  }
+);

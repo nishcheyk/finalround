@@ -10,7 +10,10 @@ import createHttpError from "http-errors";
 // Generic validation handler
 export const validate = (validations: ValidationChain[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
-    // Run all validations
+    if (!Array.isArray(validations)) {
+      console.error("Validations is not an array:", validations);
+      throw new Error("Validation rules must be an array");
+    }
     await Promise.all(validations.map((validation) => validation.run(req)));
 
     const errors = validationResult(req);

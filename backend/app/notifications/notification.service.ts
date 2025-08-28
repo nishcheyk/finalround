@@ -24,7 +24,6 @@ export interface NotificationResponse {
 }
 
 export class NotificationService {
-  // Create a new notification
   static async createNotification(
     data: CreateNotificationData
   ): Promise<NotificationResponse> {
@@ -35,8 +34,10 @@ export class NotificationService {
         console.log("Creating global notification");
         const users = await UserModel.find({}, "_id");
         recipients = users.map((user) => user._id.toString());
+        console.log(`Global recipients count: ${recipients.length}`);
       } else if (data.recipients && data.recipients.length > 0) {
         recipients = data.recipients;
+        console.log(`Selected recipients: ${recipients.join(", ")}`);
       } else {
         console.log("No recipients selected and notification is not global");
         throw createHttpError(
@@ -48,28 +49,30 @@ export class NotificationService {
       const notification = new NotificationModel({
         ...data,
         recipients,
-        readBy: [], // No one has read it yet
+        readBy: [],
       });
 
       await notification.save();
+      console.log("Notification saved successfully with ID:", notification._id);
 
-      // Fetch recipient user details for email/SMS
       const users = await UserModel.find({ _id: { $in: recipients } });
+      console.log(`Fetched recipient user data count: ${users.length}`);
+
       for (const user of users) {
-        // Enqueue email job
         if (user.email) {
           await notificationQueue.add("sendNotificationEmail", {
             to: user.email,
             subject: data.title,
             html: `<div style='font-family: sans-serif;'><h2>${data.title}</h2><p>${data.message}</p></div>`,
           });
+          console.log(`Enqueued email job for ${user.email}`);
         }
-        // Enqueue SMS job
         if (user.phone) {
           await notificationQueue.add("sendNotificationSMS", {
             to: user.phone,
             body: `${data.title}: ${data.message}`,
           });
+          console.log(`Enqueued SMS job for ${user.phone}`);
         }
       }
 
@@ -91,23 +94,25 @@ export class NotificationService {
         .populate("readBy.user", "name email");
 
       if (!notification) {
+        console.log(`Notification not found for id: ${notificationId}`);
         throw createHttpError(404, "Notification not found");
       }
 
-      // Users who have read the notification
       const readUsers = notification.readBy.map((entry) => ({
         user: entry.user,
         readAt: entry.readAt,
       }));
 
-      // Build a set of read user IDs for quick lookup
       const readUserIds = new Set(
         notification.readBy.map((entry) => entry.user._id.toString())
       );
 
-      // Users who have NOT read the notification
       const unreadUsers = notification.recipients.filter(
         (user) => !readUserIds.has(user._id.toString())
+      );
+
+      console.log(
+        `Read users count: ${readUsers.length}, unread users count: ${unreadUsers.length}`
       );
 
       return {
@@ -117,11 +122,11 @@ export class NotificationService {
         notification,
       };
     } catch (error) {
+      console.error("Error getting notification read status:", error);
       throw createHttpError(500, "Failed to get notification read status");
     }
   }
 
-  // Get notifications for a specific user
   static async getUserNotifications(
     userId: string
   ): Promise<NotificationResponse> {
@@ -145,8 +150,11 @@ export class NotificationService {
         .sort({ createdAt: -1 })
         .limit(50);
 
-      // Calculate unread count
       const unreadCount = await this.getUnreadCount(userId);
+
+      console.log(
+        `Fetched ${notifications.length} notifications for user ${userId}, unread count: ${unreadCount}`
+      );
 
       return {
         success: true,
@@ -155,11 +163,11 @@ export class NotificationService {
         unreadCount,
       };
     } catch (error) {
+      console.error("Error retrieving notifications:", error);
       throw createHttpError(500, "Failed to retrieve notifications");
     }
   }
 
-  // Mark notification as read
   static async markAsRead(
     notificationId: string,
     userId: string
@@ -168,24 +176,26 @@ export class NotificationService {
       const notification = await NotificationModel.findById(notificationId);
 
       if (!notification) {
+        console.log(`Notification not found for id: ${notificationId}`);
         throw createHttpError(404, "Notification not found");
       }
 
       const objectIdUser = new Types.ObjectId(userId);
 
-      // Check if user is recipient or if it's global
       const isRecipient =
         notification.recipients.some((recipientId) =>
           recipientId.equals(objectIdUser)
         ) || notification.isGlobal;
       if (!isRecipient) {
+        console.log(
+          `User ${userId} does not have access to notification ${notificationId}`
+        );
         throw createHttpError(
           403,
           "You don't have access to this notification"
         );
       }
 
-      // Check if already read
       const alreadyRead = notification.readBy.some((read) =>
         read.user.equals(objectIdUser)
       );
@@ -196,7 +206,6 @@ export class NotificationService {
         };
       }
 
-      // Mark as read
       notification.readBy.push({
         user: objectIdUser,
         readAt: new Date(),
@@ -204,18 +213,22 @@ export class NotificationService {
 
       await notification.save();
 
+      console.log(
+        `User ${userId} marked notification ${notificationId} as read`
+      );
+
       return {
         success: true,
         message: "Notification marked as read",
         notification,
       };
     } catch (error) {
+      console.error("Error marking notification as read:", error);
       if (error instanceof createHttpError) throw error;
       throw createHttpError(500, "Failed to mark notification as read");
     }
   }
 
-  // Mark all notifications as read for a user
   static async markAllAsRead(userId: string): Promise<NotificationResponse> {
     try {
       const objectIdUser = new Types.ObjectId(userId);
@@ -235,16 +248,20 @@ export class NotificationService {
         }
       );
 
+      console.log(
+        `Marked ${result.modifiedCount} notifications as read for user ${userId}`
+      );
+
       return {
         success: true,
         message: `Marked ${result.modifiedCount} notifications as read`,
       };
     } catch (error) {
+      console.error("Error marking all notifications as read:", error);
       throw createHttpError(500, "Failed to mark notifications as read");
     }
   }
 
-  // Get unread count for a user
   static async getUnreadCount(userId: string): Promise<number> {
     try {
       const objectIdUser = new Types.ObjectId(userId);
@@ -273,13 +290,15 @@ export class NotificationService {
         }
       }
 
+      console.log(`User ${userId} has ${unreadCount} unread notifications`);
+
       return unreadCount;
     } catch (error) {
+      console.error("Error getting unread count:", error);
       return 0;
     }
   }
 
-  // Get all notifications (admin only)
   static async getAllNotifications(): Promise<NotificationResponse> {
     try {
       const notifications = await NotificationModel.find()
@@ -287,17 +306,19 @@ export class NotificationService {
         .populate("recipients", "name email")
         .sort({ createdAt: -1 });
 
+      console.log(`Fetched ${notifications.length} total notifications`);
+
       return {
         success: true,
         message: "All notifications retrieved successfully",
         notifications,
       };
     } catch (error) {
+      console.error("Error getting all notifications:", error);
       throw createHttpError(500, "Failed to retrieve all notifications");
     }
   }
 
-  // Delete notification (admin only)
   static async deleteNotification(
     notificationId: string
   ): Promise<NotificationResponse> {
@@ -306,20 +327,23 @@ export class NotificationService {
         await NotificationModel.findByIdAndDelete(notificationId);
 
       if (!notification) {
+        console.log(`Notification not found with id: ${notificationId}`);
         throw createHttpError(404, "Notification not found");
       }
+
+      console.log(`Deleted notification with id: ${notificationId}`);
 
       return {
         success: true,
         message: "Notification deleted successfully",
       };
     } catch (error) {
+      console.error("Error deleting notification:", error);
       if (error instanceof createHttpError) throw error;
       throw createHttpError(500, "Failed to delete notification");
     }
   }
 
-  // Get notification statistics (admin only)
   static async getNotificationStats(): Promise<any> {
     try {
       const totalNotifications = await NotificationModel.countDocuments();
@@ -330,6 +354,10 @@ export class NotificationService {
         createdAt: { $gte: new Date().setHours(0, 0, 0, 0) },
       });
 
+      console.log(
+        `Stats: total=${totalNotifications}, global=${globalNotifications}, today=${todayNotifications}`
+      );
+
       return {
         success: true,
         stats: {
@@ -339,6 +367,7 @@ export class NotificationService {
         },
       };
     } catch (error) {
+      console.error("Error getting notification stats:", error);
       throw createHttpError(500, "Failed to get notification statistics");
     }
   }

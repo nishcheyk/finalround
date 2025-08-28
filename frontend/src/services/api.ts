@@ -178,7 +178,7 @@ export const api = createApi({
 
     // Appointment endpoints
     getUserAppointments: builder.query<any, void>({
-      query: () => "/appointments/user",
+      query: () => "/appointments/me",
       providesTags: ["Appointments"],
     }),
 
@@ -308,6 +308,7 @@ export const {
 
   // Availability & Appointment
   useGetAvailabilityQuery,
+
   useCreateAppointmentMutation,
   useGetUserAppointmentsQuery,
   useCancelAppointmentMutation,
