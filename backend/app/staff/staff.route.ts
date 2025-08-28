@@ -14,15 +14,15 @@ import {
 
 const router = Router();
 
-// Admin-only routes
-router.use(authenticator(true));
-
-router.route("/").post(validate(staffValidation), createStaff).get(getStaff);
+router
+  .route("/")
+  .post(authenticator(true), validate(staffValidation), createStaff) // POST requires auth
+  .get(getStaff, authenticator());
 
 router
   .route("/:id")
-  .get(getStaffById)
-  .patch(validate(staffValidation), updateStaff)
-  .delete(deleteStaff);
+  .get(authenticator(), getStaffById) // GET /:id requires auth (normal user)
+  .patch(authenticator(true), validate(staffValidation), updateStaff) // PATCH /:id requires admin
+  .delete(authenticator(true), deleteStaff); // DELETE /:id requires admin
 
 export default router;
