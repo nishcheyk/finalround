@@ -20,6 +20,10 @@ import PasswordInput from "./PasswordInput";
 const validationSchema = yup.object({
   name: yup.string().required("Name is required"),
   email: yup.string().email("Email is invalid").required("Email is required"),
+  phone: yup
+    .string()
+    .required("Phone number is required")
+    .matches(/^[0-9+\-() ]+$/, "Invalid phone number"),
   password: yup
     .string()
     .required("Password is required")
@@ -70,6 +74,7 @@ export default function SignupForm() {
     defaultValues: {
       name: "",
       email: "",
+      phone: "",
       password: "",
       confirmPassword: "",
     },
@@ -118,6 +123,15 @@ export default function SignupForm() {
               error={Boolean(errors.email)}
               helperText={errors.email?.message}
               type="email"
+            />
+            <TextField
+              {...register("phone")}
+              label="Phone Number"
+              fullWidth
+              sx={style.input}
+              error={Boolean(errors.phone)}
+              helperText={errors.phone?.message}
+              type="tel"
             />
             <PasswordInput
               {...register("password")}

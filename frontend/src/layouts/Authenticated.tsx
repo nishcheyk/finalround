@@ -119,6 +119,8 @@ export default function AuthenticatedLayout() {
           </ListItemButton>
         </ListItem>
 
+        {/* Booking and Appointments moved to main page navigation, not in layout */}
+
         <ListItem disablePadding>
           <ListItemButton component={RouterLink} to="/profile">
             <ListItemIcon>
@@ -137,6 +139,24 @@ export default function AuthenticatedLayout() {
                   <AdminPanelSettingsIcon />
                 </ListItemIcon>
                 <ListItemText primary="Admin Panel" />
+              </ListItemButton>
+            </ListItem>
+
+            {/* Admin features */}
+            <ListItem disablePadding>
+              <ListItemButton component={RouterLink} to="/admin/notifications">
+                <ListItemIcon>
+                  <NotificationsIcon />
+                </ListItemIcon>
+                <ListItemText primary="Admin Notifications" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton component={RouterLink} to="/admin/users">
+                <ListItemIcon>
+                  <PersonIcon />
+                </ListItemIcon>
+                <ListItemText primary="Admin Users" />
               </ListItemButton>
             </ListItem>
           </>
@@ -207,7 +227,7 @@ export default function AuthenticatedLayout() {
             sx={{ textDecoration: "none", color: "inherit", flexGrow: 1 }}
           >
             <Typography variant="h5" noWrap fontWeight="bold">
-              🚀 App Name
+              75 WAYS technologies
             </Typography>
             {user && (
               <Box display="flex" alignItems="center" gap={1}>
@@ -285,6 +305,8 @@ export default function AuthenticatedLayout() {
                   Profile
                 </MenuItem>
 
+                {/* Booking and Appointments moved to main page navigation, not in layout */}
+
                 <MenuItem
                   component={Link}
                   to="/settings"
@@ -303,6 +325,26 @@ export default function AuthenticatedLayout() {
                     <AdminPanelSettingsIcon sx={{ mr: 2 }} />
                     Admin Panel
                   </MenuItem>
+                )}
+                {user?.isAdmin && (
+                  <>
+                    <MenuItem
+                      component={Link}
+                      to="/admin/notifications"
+                      onClick={handleMenuClose}
+                    >
+                      <NotificationsIcon sx={{ mr: 2 }} />
+                      Admin Notifications
+                    </MenuItem>
+                    <MenuItem
+                      component={Link}
+                      to="/admin/users"
+                      onClick={handleMenuClose}
+                    >
+                      <PersonIcon sx={{ mr: 2 }} />
+                      Admin Users
+                    </MenuItem>
+                  </>
                 )}
 
                 <Divider />

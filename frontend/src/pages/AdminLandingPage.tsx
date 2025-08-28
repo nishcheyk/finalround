@@ -30,11 +30,15 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
 interface AdminLandingPageProps {
   onSelectNotifications: () => void;
   onSelectUsers: () => void;
+  onSelectStats?: () => void;
+  onSelectAppointments?: () => void;
 }
 
 const AdminLandingPage: React.FC<AdminLandingPageProps> = ({
   onSelectNotifications,
   onSelectUsers,
+  onSelectStats,
+  onSelectAppointments,
 }) => {
   return (
     <Box sx={{ p: 3 }}>
@@ -52,7 +56,17 @@ const AdminLandingPage: React.FC<AdminLandingPageProps> = ({
           description="Manage users, roles, and permissions."
           onClick={onSelectUsers}
         />
-        {/* Add more feature cards */}
+        <FeatureCard
+          title="View Stats"
+          description="View platform statistics and analytics."
+          onClick={onSelectStats || (() => {})}
+        />
+        <FeatureCard
+          title="Manage Appointments"
+          description="View and manage all appointments."
+          onClick={onSelectAppointments || (() => {})}
+        />
+        {/* Add more feature cards as needed */}
       </Grid>
     </Box>
   );

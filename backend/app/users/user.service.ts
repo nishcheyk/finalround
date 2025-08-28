@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 interface RegisterDTO {
   name: string;
   email: string;
-  phone?: string;
+  phone: string;
   password: string;
 }
 
@@ -18,13 +18,17 @@ const JWT_SECRET = process.env.JWT_SECRET || "secret";
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "refreshSecret";
 
 export const registerUserService = async (dto: RegisterDTO): Promise<IUser> => {
+  if (!dto.phone) {
+    const error: any = new Error("Phone number is required");
+    error.statusCode = 400;
+    throw error;
+  }
   const existingUser = await User.findOne({ email: dto.email });
   if (existingUser) {
     const error: any = new Error("Email already exists");
     error.statusCode = 400;
     throw error;
   }
-
   const hash = await bcrypt.hash(dto.password, 10);
   const user = new User({ ...dto, password: hash });
   await user.save();
@@ -39,6 +43,11 @@ export const loginUserService = async (dto: LoginDTO) => {
     throw error;
   }
 
+  if (!user.password) {
+    const error: any = new Error("User password not set");
+    error.statusCode = 401;
+    throw error;
+  }
   const valid = await bcrypt.compare(dto.password, user.password);
   if (!valid) {
     const error: any = new Error("Invalid credentials");
@@ -50,7 +59,7 @@ export const loginUserService = async (dto: LoginDTO) => {
   const token = jwt.sign(
     { userId: user._id, isAdmin: user.isAdmin, email: user.email },
     JWT_SECRET,
-    { expiresIn: "15m" },
+    { expiresIn: "15m" }
   );
 
   // Generate refresh token (long expiry)
@@ -59,6 +68,8 @@ export const loginUserService = async (dto: LoginDTO) => {
   });
 
   // Save refresh token in user document (for revocation etc.)
+
+  user.refreshTokens = user.refreshTokens || [];
   user.refreshTokens.push(refreshToken);
   await user.save();
 
@@ -84,6 +95,8 @@ export const refreshAccessTokenService = async (refreshToken: string) => {
     if (!user) {
       throw new Error("User not found");
     }
+
+    user.refreshTokens = user.refreshTokens || [];
     if (!user.refreshTokens.includes(refreshToken)) {
       throw new Error("Refresh token revoked");
     }
@@ -92,7 +105,7 @@ export const refreshAccessTokenService = async (refreshToken: string) => {
     const newToken = jwt.sign(
       { userId: user._id, isAdmin: user.isAdmin, email: user.email },
       JWT_SECRET,
-      { expiresIn: "15m" },
+      { expiresIn: "15m" }
     );
 
     // Generate new refresh token (token rotation)
@@ -101,6 +114,8 @@ export const refreshAccessTokenService = async (refreshToken: string) => {
     });
 
     // Remove old refresh token and add new one
+
+    user.refreshTokens = user.refreshTokens || [];
     user.refreshTokens = user.refreshTokens.filter((t) => t !== refreshToken);
     user.refreshTokens.push(newRefreshToken);
     await user.save();
@@ -114,6 +129,8 @@ export const refreshAccessTokenService = async (refreshToken: string) => {
 export const logoutUserService = async (refreshToken: string) => {
   const user = await User.findOne({ refreshTokens: refreshToken });
   if (!user) return false;
+
+  user.refreshTokens = user.refreshTokens || [];
   user.refreshTokens = user.refreshTokens.filter((t) => t !== refreshToken);
   await user.save();
   return true;

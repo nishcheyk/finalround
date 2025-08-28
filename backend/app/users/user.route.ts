@@ -6,6 +6,8 @@ import {
   logoutController,
   resetPasswordController,
   getAllUsersController,
+  updateUserRoleController,
+  deleteUserController,
 } from "./users.controller";
 
 import {
@@ -28,26 +30,27 @@ import {
 } from "../common/middlewares/validation.middleware";
 
 const router = Router();
+// Debug: log every request to this router
 
 router.post(
   "/register",
   registerLimiter,
   validate(registerValidation),
-  registerController,
+  registerController
 );
 router.post("/login", loginLimiter, validate(loginValidation), loginController);
 router.post(
   "/refresh-token",
   refreshLimiter,
   validate(refreshTokenValidation),
-  refreshTokenController,
+  refreshTokenController
 );
 router.post(
   "/logout",
   authenticator(),
   logoutLimiter,
   validate(logoutValidation),
-  logoutController,
+  logoutController
 );
 
 router.post(
@@ -55,8 +58,10 @@ router.post(
   resetPasswordLimiter,
   otpVerificationRequired,
   validate(resetPasswordValidation),
-  resetPasswordController,
+  resetPasswordController
 );
 
 router.get("/", authenticator(true), getAllUsersController);
+router.patch("/:id/role", authenticator(true), updateUserRoleController);
+router.delete("/:id", authenticator(true), deleteUserController);
 export default router;

@@ -1,6 +1,6 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Box, Button, Typography, Paper } from '@mui/material';
-import { Error as ErrorIcon } from '@mui/icons-material';
+import React, { Component, ErrorInfo, ReactNode } from "react";
+import { Box, Button, Typography, Paper } from "@mui/material";
+import { Error as ErrorIcon } from "@mui/icons-material";
 
 interface Props {
   children: ReactNode;
@@ -27,7 +27,7 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
+    console.error("Error caught by boundary:", error, errorInfo);
     this.setState({ error, errorInfo });
   }
 
@@ -54,7 +54,7 @@ class ErrorBoundary extends Component<Props, State> {
             sx={{
               p: 4,
               maxWidth: 500,
-              textAlign: 'center',
+              textAlign: "center",
               borderRadius: 2,
             }}
           >
@@ -63,23 +63,28 @@ class ErrorBoundary extends Component<Props, State> {
               Oops! Something went wrong
             </Typography>
             <Typography variant="body1" color="text.secondary" mb={3}>
-              We're sorry, but something unexpected happened. Please try refreshing the page or contact support if the problem persists.
+              We're sorry, but something unexpected happened. Please try
+              refreshing the page or contact support if the problem persists.
             </Typography>
-            
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+
+            {process.env.NODE_ENV === "development" && this.state.error && (
               <Box
                 sx={{
-                  bgcolor: 'grey.100',
+                  bgcolor: "grey.100",
                   p: 2,
                   borderRadius: 1,
                   mb: 3,
-                  textAlign: 'left',
+                  textAlign: "left",
                 }}
               >
                 <Typography variant="subtitle2" gutterBottom>
                   Error Details (Development):
                 </Typography>
-                <Typography variant="body2" component="pre" sx={{ fontSize: '0.75rem' }}>
+                <Typography
+                  variant="body2"
+                  component="pre"
+                  sx={{ fontSize: "0.75rem" }}
+                >
                   {this.state.error.toString()}
                 </Typography>
               </Box>

@@ -2,6 +2,7 @@ import NotificationModel, { INotification } from "./notification.schema";
 import UserModel from "../users/user.schema";
 import createHttpError from "http-errors";
 import { Types } from "mongoose";
+import notificationQueue from "../common/services/bull-queue.service";
 
 export interface CreateNotificationData {
   title: string;
@@ -25,7 +26,7 @@ export interface NotificationResponse {
 export class NotificationService {
   // Create a new notification
   static async createNotification(
-    data: CreateNotificationData,
+    data: CreateNotificationData
   ): Promise<NotificationResponse> {
     try {
       let recipients: string[] = [];
@@ -40,7 +41,7 @@ export class NotificationService {
         console.log("No recipients selected and notification is not global");
         throw createHttpError(
           400,
-          "Recipients are required for non-global notifications",
+          "Recipients are required for non-global notifications"
         );
       }
 
@@ -51,6 +52,26 @@ export class NotificationService {
       });
 
       await notification.save();
+
+      // Fetch recipient user details for email/SMS
+      const users = await UserModel.find({ _id: { $in: recipients } });
+      for (const user of users) {
+        // Enqueue email job
+        if (user.email) {
+          await notificationQueue.add("sendNotificationEmail", {
+            to: user.email,
+            subject: data.title,
+            html: `<div style='font-family: sans-serif;'><h2>${data.title}</h2><p>${data.message}</p></div>`,
+          });
+        }
+        // Enqueue SMS job
+        if (user.phone) {
+          await notificationQueue.add("sendNotificationSMS", {
+            to: user.phone,
+            body: `${data.title}: ${data.message}`,
+          });
+        }
+      }
 
       return {
         success: true,
@@ -81,12 +102,12 @@ export class NotificationService {
 
       // Build a set of read user IDs for quick lookup
       const readUserIds = new Set(
-        notification.readBy.map((entry) => entry.user._id.toString()),
+        notification.readBy.map((entry) => entry.user._id.toString())
       );
 
       // Users who have NOT read the notification
       const unreadUsers = notification.recipients.filter(
-        (user) => !readUserIds.has(user._id.toString()),
+        (user) => !readUserIds.has(user._id.toString())
       );
 
       return {
@@ -102,7 +123,7 @@ export class NotificationService {
 
   // Get notifications for a specific user
   static async getUserNotifications(
-    userId: string,
+    userId: string
   ): Promise<NotificationResponse> {
     try {
       const objectIdUser = new Types.ObjectId(userId);
@@ -141,7 +162,7 @@ export class NotificationService {
   // Mark notification as read
   static async markAsRead(
     notificationId: string,
-    userId: string,
+    userId: string
   ): Promise<NotificationResponse> {
     try {
       const notification = await NotificationModel.findById(notificationId);
@@ -155,18 +176,18 @@ export class NotificationService {
       // Check if user is recipient or if it's global
       const isRecipient =
         notification.recipients.some((recipientId) =>
-          recipientId.equals(objectIdUser),
+          recipientId.equals(objectIdUser)
         ) || notification.isGlobal;
       if (!isRecipient) {
         throw createHttpError(
           403,
-          "You don't have access to this notification",
+          "You don't have access to this notification"
         );
       }
 
       // Check if already read
       const alreadyRead = notification.readBy.some((read) =>
-        read.user.equals(objectIdUser),
+        read.user.equals(objectIdUser)
       );
       if (alreadyRead) {
         return {
@@ -211,7 +232,7 @@ export class NotificationService {
               readAt: new Date(),
             },
           },
-        },
+        }
       );
 
       return {
@@ -245,7 +266,7 @@ export class NotificationService {
       let unreadCount = 0;
       for (const notification of notifications) {
         const isRead = notification.readBy.some((read) =>
-          read.user.equals(objectIdUser),
+          read.user.equals(objectIdUser)
         );
         if (!isRead) {
           unreadCount++;
@@ -278,7 +299,7 @@ export class NotificationService {
 
   // Delete notification (admin only)
   static async deleteNotification(
-    notificationId: string,
+    notificationId: string
   ): Promise<NotificationResponse> {
     try {
       const notification =

@@ -1,16 +1,86 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "./baseQuery"; // Import from baseQuery.ts
-import { NotificationResponse, CreateNotificationData, NotificationStats } from "../types/notification";
+import {
+  NotificationResponse,
+  CreateNotificationData,
+  NotificationStats,
+} from "../types/notification";
 
 export const api = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["ME", "Notifications", "Users"],
+  tagTypes: ["ME", "Notifications", "Users", "Appointments"],
   endpoints: (builder) => ({
-    manualRefreshToken: builder.mutation<
-      { token: string },
-      void
+    // Service endpoints
+    getServices: builder.query<any, void>({
+      query: () => "/services",
+    }),
+    createService: builder.mutation<
+      any,
+      { name: string; description: string; duration: number; price: number }
     >({
+      query: (body) => ({
+        url: "/services",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Users"],
+    }),
+    updateService: builder.mutation<
+      any,
+      {
+        id: string;
+        name: string;
+        description: string;
+        duration: number;
+        price: number;
+      }
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/services/${id}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["Users"],
+    }),
+    deleteService: builder.mutation<any, string>({
+      query: (id) => ({
+        url: `/services/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Users"],
+    }),
+
+    // Staff endpoints
+    getStaff: builder.query<any, void>({
+      query: () => "/staff",
+    }),
+
+    // Availability endpoint
+    getAvailability: builder.query<
+      any,
+      { staffId: string; serviceId: string; date: string }
+    >({
+      query: (body) => ({
+        url: "/appointments/availability",
+        method: "POST",
+        body,
+      }),
+    }),
+
+    // Create appointment
+    createAppointment: builder.mutation<
+      any,
+      { staffId: string; serviceId: string; startTime: Date }
+    >({
+      query: (body) => ({
+        url: "/appointments",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Appointments"],
+    }),
+    manualRefreshToken: builder.mutation<{ token: string }, void>({
       query: () => ({
         url: "/users/refresh-token",
         method: "POST",
@@ -28,12 +98,29 @@ export const api = createApi({
       }),
     }),
     getAllUsers: builder.query<
-    { users: { _id: string; name: string; email: string }[] }, 
-    void
-  >({
-    query: () => "/users", // Ensure your backend GET /users returns list of users with _id, name, email
-    providesTags: ["Users"],
-  }),
+      { users: { _id: string; name: string; email: string; role?: string }[] },
+      void
+    >({
+      query: () => "/users",
+      providesTags: ["Users"],
+    }),
+
+    updateUserRole: builder.mutation<any, { id: string; role: string }>({
+      query: ({ id, role }) => ({
+        url: `/users/${id}/role`,
+        method: "PATCH",
+        body: { role },
+      }),
+      invalidatesTags: ["Users"],
+    }),
+
+    deleteUser: builder.mutation<any, string>({
+      query: (id) => ({
+        url: `/users/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Users"],
+    }),
 
     login: builder.mutation<
       { token: string; refreshToken: string; user: any },
@@ -56,7 +143,7 @@ export const api = createApi({
       query: () => "/users/me",
       providesTags: ["ME"],
     }),
-    
+
     sendOtp: builder.mutation<
       { success: boolean; message: string },
       { email: string }
@@ -87,7 +174,32 @@ export const api = createApi({
         method: "POST",
         body,
       }),
-      
+    }),
+
+    // Appointment endpoints
+    getUserAppointments: builder.query<any, void>({
+      query: () => "/appointments/user",
+      providesTags: ["Appointments"],
+    }),
+
+    cancelAppointment: builder.mutation<any, string>({
+      query: (id) => ({
+        url: `/appointments/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Appointments"],
+    }),
+
+    rescheduleAppointment: builder.mutation<
+      any,
+      { id: string; newStartTime: Date }
+    >({
+      query: ({ id, newStartTime }) => ({
+        url: `/appointments/${id}/reschedule`,
+        method: "PATCH",
+        body: { newStartTime },
+      }),
+      invalidatesTags: ["Appointments"],
     }),
 
     // Notification endpoints
@@ -96,7 +208,10 @@ export const api = createApi({
       providesTags: ["Notifications"],
     }),
 
-    getUnreadCount: builder.query<{ success: boolean; unreadCount: number }, void>({
+    getUnreadCount: builder.query<
+      { success: boolean; unreadCount: number },
+      void
+    >({
       query: () => "/notifications/unread-count",
       providesTags: ["Notifications"],
     }),
@@ -118,7 +233,10 @@ export const api = createApi({
     }),
 
     // Admin notification endpoints
-    createNotification: builder.mutation<NotificationResponse, CreateNotificationData>({
+    createNotification: builder.mutation<
+      NotificationResponse,
+      CreateNotificationData
+    >({
       query: (body) => ({
         url: "/notifications",
         method: "POST",
@@ -140,16 +258,18 @@ export const api = createApi({
       invalidatesTags: ["Notifications"],
     }),
 
-    getNotificationStats: builder.query<{ success: boolean; stats: NotificationStats }, void>({
+    getNotificationStats: builder.query<
+      { success: boolean; stats: NotificationStats },
+      void
+    >({
       query: () => "/notifications/stats",
       providesTags: ["Notifications"],
     }),
-    
+
     getNotificationReadStatus: builder.query<any, string>({
       query: (notificationId) => `/notifications/${notificationId}/read-status`,
       providesTags: ["Notifications"],
     }),
-    
   }),
 });
 
@@ -162,7 +282,7 @@ export const {
   useSendOtpMutation,
   useVerifyOtpMutation,
   useResetPasswordMutation,
-  
+
   // Notification hooks
   useGetUserNotificationsQuery,
   useGetUnreadCountQuery,
@@ -174,6 +294,22 @@ export const {
   useGetNotificationStatsQuery,
   useGetNotificationReadStatusQuery,
 
-  //all user 
-  useGetAllUsersQuery 
+  //all user
+  useGetAllUsersQuery,
+  useUpdateUserRoleMutation,
+  useDeleteUserMutation,
+
+  // Service & Staff
+  useGetServicesQuery,
+  useCreateServiceMutation,
+  useUpdateServiceMutation,
+  useDeleteServiceMutation,
+  useGetStaffQuery,
+
+  // Availability & Appointment
+  useGetAvailabilityQuery,
+  useCreateAppointmentMutation,
+  useGetUserAppointmentsQuery,
+  useCancelAppointmentMutation,
+  useRescheduleAppointmentMutation,
 } = api;

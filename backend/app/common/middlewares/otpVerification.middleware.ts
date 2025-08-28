@@ -25,7 +25,7 @@ import OTPModel from "../../otp/otp.schema";
 export const otpVerificationRequired = async (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   const { email } = req.body;
 

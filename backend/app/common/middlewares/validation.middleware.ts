@@ -25,7 +25,7 @@ export const validate = (validations: ValidationChain[]) => {
     }));
 
     return next(
-      createHttpError(400, "Validation failed", { errors: extractedErrors }),
+      createHttpError(400, "Validation failed", { errors: extractedErrors })
     );
   };
 };
@@ -49,11 +49,10 @@ export const registerValidation = [
     .withMessage("Password must be between 8 and 128 characters")
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
     .withMessage(
-      "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
+      "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
     ),
 
   body("phone")
-    .optional()
     .isMobilePhone("any")
     .withMessage("Please provide a valid phone number"),
 ];
@@ -80,7 +79,7 @@ export const resetPasswordValidation = [
     .withMessage("Password must be between 8 and 128 characters")
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
     .withMessage(
-      "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
+      "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
     ),
 ];
 
@@ -149,4 +148,61 @@ export const createNotificationValidation = [
     .optional()
     .isISO8601()
     .withMessage("ExpiresAt must be a valid date"),
+];
+
+// Validation rules for Service
+export const serviceValidation = [
+  body("name").trim().notEmpty().withMessage("Service name is required"),
+  body("description")
+    .trim()
+    .notEmpty()
+    .withMessage("Service description is required"),
+  body("duration")
+    .isInt({ min: 5 })
+    .withMessage("Duration must be an integer of at least 5 minutes"),
+  body("price")
+    .isFloat({ min: 0 })
+    .withMessage("Price must be a non-negative number"),
+];
+
+// Validation rules for Staff
+export const staffValidation = [
+  body("user").isMongoId().withMessage("A valid user ID is required"),
+  body("services")
+    .optional()
+    .isArray()
+    .withMessage("Services must be an array"),
+  body("services.*").isMongoId().withMessage("Each service must be a valid ID"),
+  body("availability")
+    .isArray({ min: 1 })
+    .withMessage("Availability must be a non-empty array"),
+  body("availability.*.dayOfWeek")
+    .isInt({ min: 0, max: 6 })
+    .withMessage("dayOfWeek must be between 0 (Sun) and 6 (Sat)"),
+  body("availability.*.startTime")
+    .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
+    .withMessage("startTime must be in HH:mm format"),
+  body("availability.*.endTime")
+    .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
+    .withMessage("endTime must be in HH:mm format"),
+];
+
+// Validation rules for checking availability
+export const checkAvailabilityValidation = [
+  body("serviceId").isMongoId().withMessage("A valid serviceId is required"),
+  body("staffId").isMongoId().withMessage("A valid staffId is required"),
+  body("date")
+    .isISO8601()
+    .toDate()
+    .withMessage("A valid date in ISO8601 format is required"),
+];
+
+// Validation rules for creating an appointment
+export const createAppointmentValidation = [
+  body("staffId").isMongoId().withMessage("A valid staffId is required"),
+  body("serviceId").isMongoId().withMessage("A valid serviceId is required"),
+  body("startTime")
+    .isISO8601()
+    .toDate()
+    .withMessage("A valid startTime in ISO8601 format is required"),
 ];

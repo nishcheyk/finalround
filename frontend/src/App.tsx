@@ -20,10 +20,17 @@ const Home = lazy(() => import("./pages/homepage"));
 const LoginPage = lazy(() => import("./pages/login"));
 const Register = lazy(() => import("./pages/register"));
 const ForgetPasswordPage = lazy(() => import("./pages/ForgetPasswordPage"));
+const AppointmentBookingPage = lazy(
+  () => import("./pages/AppointmentBookingPage")
+);
+const MyAppointmentsPage = lazy(() => import("./pages/MyAppointmentsPage"));
 
 // Admin Pages
 const AdminLandingPage = lazy(() => import("./pages/AdminLandingPage"));
 const AdminNotifications = lazy(() => import("./pages/AdminNotifications"));
+const AdminUsers = lazy(() => import("./pages/AdminUsers"));
+const AdminStats = lazy(() => import("./pages/AdminStats"));
+const AdminAppointments = lazy(() => import("./pages/AdminAppointments"));
 
 // Role & auth protected route component
 const RoleProtectedRoute: React.FC<{ requiredAdmin?: boolean }> = ({
@@ -51,6 +58,8 @@ const AdminLandingWrapper: React.FC = () => {
     <AdminLandingPage
       onSelectNotifications={() => navigate("/admin/notifications")}
       onSelectUsers={() => navigate("/admin/users")}
+      onSelectStats={() => navigate("/admin/stats")}
+      onSelectAppointments={() => navigate("/admin/appointments")}
     />
   );
 };
@@ -77,6 +86,8 @@ const App: React.FC = () => {
           <Route element={<RoleProtectedRoute />}>
             <Route element={<AuthenticatedLayout />}>
               <Route path="/" element={<Home />} />
+              <Route path="/book" element={<AppointmentBookingPage />} />
+              <Route path="/my-appointments" element={<MyAppointmentsPage />} />
               {/* other authenticated routes */}
             </Route>
           </Route>
@@ -89,7 +100,12 @@ const App: React.FC = () => {
                 path="/admin/notifications"
                 element={<AdminNotifications />}
               />
-              {/* Add other admin feature routes here */}
+              <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/admin/stats" element={<AdminStats />} />
+              <Route
+                path="/admin/appointments"
+                element={<AdminAppointments />}
+              />
             </Route>
           </Route>
 

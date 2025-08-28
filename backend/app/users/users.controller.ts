@@ -8,6 +8,65 @@ import {
   resetPasswordService,
 } from "./user.service";
 import User from "./user.schema";
+export const updateUserRoleController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { role } = req.body;
+    if (!role || !["user", "admin", "staff"].includes(role)) {
+      res.status(400).json({ message: "Invalid role" });
+      return;
+    }
+    // Prevent demoting the last admin
+    const user = await User.findById(id);
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+    if (user.role === "admin" && role !== "admin") {
+      const adminCount = await User.countDocuments({ role: "admin" });
+      if (adminCount === 1) {
+        res.status(400).json({ message: "Cannot demote the last admin" });
+        return;
+      }
+    }
+    user.role = role;
+    await user.save();
+    res.json({
+      success: true,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  }
+);
+
+// Delete user
+export const deleteUserController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+    // Prevent deleting the last admin
+    if (user.role === "admin") {
+      const adminCount = await User.countDocuments({ role: "admin" });
+      if (adminCount === 1) {
+        res.status(400).json({ message: "Cannot delete the last admin" });
+        return;
+      }
+    }
+    await User.findByIdAndDelete(id);
+    res.json({ success: true, message: "User deleted" });
+  }
+);
+
 /**
  * User Registration Controller
  * Handles user registration with validation
@@ -21,7 +80,7 @@ export const registerController = asyncHandler(
       message: "User registered successfully",
       userId: user._id,
     });
-  },
+  }
 );
 
 /**
@@ -51,7 +110,7 @@ export const loginController = asyncHandler(
       token,
       user,
     });
-  },
+  }
 );
 
 /**
@@ -82,7 +141,7 @@ export const refreshTokenController = asyncHandler(
       success: true,
       token: newToken,
     });
-  },
+  }
 );
 
 /**
@@ -113,7 +172,7 @@ export const logoutController = asyncHandler(
       res.status(400);
       throw new Error("Invalid refresh token");
     }
-  },
+  }
 );
 
 /**
@@ -129,10 +188,15 @@ export const resetPasswordController = asyncHandler(async (req, res) => {
 export const getAllUsersController = asyncHandler(
   async (req: Request, res: Response) => {
     try {
-      const users = await User.find({}, "_id name email").lean();
+      const { role } = req.query;
+      const filter: any = {};
+      if (role && ["user", "admin", "staff"].includes(role as string)) {
+        filter.role = role;
+      }
+      const users = await User.find(filter, "_id name email role phone").lean();
       res.status(200).json({ users });
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch users" });
     }
-  },
+  }
 );

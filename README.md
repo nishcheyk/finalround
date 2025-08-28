@@ -410,4 +410,4 @@ A robust, scalable full-stack application for event booking and real-time notifi
 
 ## Contact
 
-For questions or support, open an issue or contact the maintainer.
+For questions or support, open an issue or contact the maintainer. github: nishcheyk
