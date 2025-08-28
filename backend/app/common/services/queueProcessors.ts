@@ -58,10 +58,17 @@ notificationQueue.process("sendAppointmentConfirmation", async (job: Job) => {
           <p>We look forward to seeing you!</p>
         </div>
       `;
-      await sendEmail({ to: userEmail, subject: "Appointment Confirmed", html: emailHtml });
+      await sendEmail({
+        to: userEmail,
+        subject: "Appointment Confirmed",
+        html: emailHtml,
+      });
       console.log(`Appointment confirmation email sent to ${userEmail}`);
     } catch (error) {
-      console.error(`Failed to send appointment confirmation email to ${userEmail}:`, error);
+      console.error(
+        `Failed to send appointment confirmation email to ${userEmail}:`,
+        error
+      );
     }
   }
 
@@ -72,7 +79,10 @@ notificationQueue.process("sendAppointmentConfirmation", async (job: Job) => {
       await sendSMS(userPhone, smsBody);
       console.log(`Appointment confirmation SMS sent to ${userPhone}`);
     } catch (error) {
-      console.error(`Failed to send appointment confirmation SMS to ${userPhone}:`, error);
+      console.error(
+        `Failed to send appointment confirmation SMS to ${userPhone}:`,
+        error
+      );
     }
   }
 });

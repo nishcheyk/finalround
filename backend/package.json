@@ -2,6 +2,7 @@
   "name": "template",
   "private": true,
   "scripts": {
+    "s": "nodemon",
     "local": "nodemon",
     "start": "NODE_ENV=local ts-node ./index.ts",
     "dev": "pnpm run build && NODE_ENV=development node ./dist/index.js",
@@ -57,10 +58,12 @@
     "lint-staged": "^13.2.3",
     "mongodb-memory-server": "^10.2.0",
     "newman": "^6.2.1",
+    "nodemon": "^3.1.10",
     "prettier": "^3.0.0",
     "supertest": "^7.1.4",
     "ts-jest": "^29.4.1",
     "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.2"
   },
   "dependencies": {
@@ -87,7 +90,6 @@
     "morgan": "^1.10.0",
     "node-mailjet": "^6.0.8",
     "nodemailer": "^6.10.1",
-    "nodemon": "^3.0.1",
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",

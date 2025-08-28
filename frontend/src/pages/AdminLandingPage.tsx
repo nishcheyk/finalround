@@ -32,6 +32,7 @@ interface AdminLandingPageProps {
   onSelectUsers: () => void;
   onSelectStats?: () => void;
   onSelectAppointments?: () => void;
+  onSelectServices?: () => void;
 }
 
 const AdminLandingPage: React.FC<AdminLandingPageProps> = ({
@@ -39,6 +40,7 @@ const AdminLandingPage: React.FC<AdminLandingPageProps> = ({
   onSelectUsers,
   onSelectStats,
   onSelectAppointments,
+  onSelectServices,
 }) => {
   return (
     <Box sx={{ p: 3 }}>
@@ -55,6 +57,11 @@ const AdminLandingPage: React.FC<AdminLandingPageProps> = ({
           title="User Management"
           description="Manage users, roles, and permissions."
           onClick={onSelectUsers}
+        />
+        <FeatureCard
+          title="Manage Services"
+          description="Add, edit, or remove services."
+          onClick={onSelectServices || (() => {})}
         />
         <FeatureCard
           title="View Stats"

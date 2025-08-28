@@ -1,6 +1,6 @@
 {
-  "ignore": [".git", "node_modules", "dist"],
-  "watch": ["./index.ts", "./app"],
-  "exec": "pnpm start",
-  "ext": "ts"
+  "watch": ["app", "index.ts"],
+  "ext": "ts,json",
+  "ignore": ["app/**/*.spec.ts", "app/**/*.test.ts"],
+  "exec": "ts-node -r tsconfig-paths/register index.ts"
 }

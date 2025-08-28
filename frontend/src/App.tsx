@@ -31,6 +31,7 @@ const AdminNotifications = lazy(() => import("./pages/AdminNotifications"));
 const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AdminStats = lazy(() => import("./pages/AdminStats"));
 const AdminAppointments = lazy(() => import("./pages/AdminAppointments"));
+const AdminServices = lazy(() => import("./pages/AdminServices"));
 
 // Role & auth protected route component
 const RoleProtectedRoute: React.FC<{ requiredAdmin?: boolean }> = ({
@@ -60,6 +61,7 @@ const AdminLandingWrapper: React.FC = () => {
       onSelectUsers={() => navigate("/admin/users")}
       onSelectStats={() => navigate("/admin/stats")}
       onSelectAppointments={() => navigate("/admin/appointments")}
+      onSelectServices={() => navigate("/admin/services")}
     />
   );
 };
@@ -106,6 +108,7 @@ const App: React.FC = () => {
                 path="/admin/appointments"
                 element={<AdminAppointments />}
               />
+              <Route path="/admin/services" element={<AdminServices />} />
             </Route>
           </Route>
 

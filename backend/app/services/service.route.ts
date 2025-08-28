@@ -14,6 +14,12 @@ import {
 
 const router = Router();
 
+// Middleware for logging requests to service routes
+router.use((req, res, next) => {
+  console.log(`[SERVICES] Request to: ${req.method} ${req.originalUrl}`);
+  next();
+});
+
 // Admin-only routes
 router.use(authenticator(true));
 

@@ -30,7 +30,18 @@ export const updateUserRoleController = asyncHandler(
       }
     }
     user.role = role;
+    user.isAdmin = role === "admin";
     await user.save();
+
+    // Auto-create Staff document if role is set to staff and not already present
+    if (role === "staff") {
+      const Staff = require("../staff/staff.schema").default;
+      const staffDoc = await Staff.findOne({ user: user._id });
+      if (!staffDoc) {
+        await Staff.create({ user: user._id, services: [], availability: [] });
+      }
+    }
+
     res.json({
       success: true,
       user: {

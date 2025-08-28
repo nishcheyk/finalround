@@ -16,13 +16,13 @@ router.post(
   "/send-otp",
   resetPasswordLimiter,
   validate(otpValidation),
-  sendOTPController,
+  sendOTPController
 );
 router.post(
   "/verify-otp",
   resetPasswordLimiter,
   validate(verifyOtpValidation),
-  verifyOTPController,
+  verifyOTPController
 );
 
 export default router;

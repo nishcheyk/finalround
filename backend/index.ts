@@ -56,12 +56,13 @@ export async function connectDB(uri: string) {
 export async function disconnectDB() {
   if (mongoose.connection.readyState !== 0) await mongoose.disconnect();
 }
-
+console.log(process.env.MONGODB_URI);
+console.log(process.env.NODE_ENV);
 // Start server and connect to MongoDB if not in test mode
 if (process.env.NODE_ENV !== "test") {
   connectDB(process.env.MONGODB_URI!).then(() => {
     app.listen(3000, () =>
-      console.log("Server running on port 3000. Swagger docs at /api-docs"),
+      console.log("Server running on port 3000. Swagger docs at /api-docs")
     );
   });
 }

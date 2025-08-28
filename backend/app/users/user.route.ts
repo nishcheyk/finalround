@@ -30,7 +30,6 @@ import {
 } from "../common/middlewares/validation.middleware";
 
 const router = Router();
-// Debug: log every request to this router
 
 router.post(
   "/register",
@@ -41,7 +40,7 @@ router.post(
 router.post("/login", loginLimiter, validate(loginValidation), loginController);
 router.post(
   "/refresh-token",
-  refreshLimiter,
+
   validate(refreshTokenValidation),
   refreshTokenController
 );

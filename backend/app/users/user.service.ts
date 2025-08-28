@@ -1,6 +1,6 @@
 import User, { IUser } from "./user.schema";
-import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import createHttpError from "http-errors";
 
 interface RegisterDTO {
   name: string;
@@ -19,18 +19,13 @@ const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "refreshSecret";
 
 export const registerUserService = async (dto: RegisterDTO): Promise<IUser> => {
   if (!dto.phone) {
-    const error: any = new Error("Phone number is required");
-    error.statusCode = 400;
-    throw error;
+    throw createHttpError(400, "Phone number is required");
   }
   const existingUser = await User.findOne({ email: dto.email });
   if (existingUser) {
-    const error: any = new Error("Email already exists");
-    error.statusCode = 400;
-    throw error;
+    throw createHttpError(400, "Email already exists");
   }
-  const hash = await bcrypt.hash(dto.password, 10);
-  const user = new User({ ...dto, password: hash });
+  const user = new User(dto);
   await user.save();
   return user;
 };
@@ -38,21 +33,15 @@ export const registerUserService = async (dto: RegisterDTO): Promise<IUser> => {
 export const loginUserService = async (dto: LoginDTO) => {
   const user = await User.findOne({ email: dto.email });
   if (!user) {
-    const error: any = new Error("User not found");
-    error.statusCode = 401;
-    throw error;
+    throw createHttpError(401, "Invalid credentials");
   }
 
   if (!user.password) {
-    const error: any = new Error("User password not set");
-    error.statusCode = 401;
-    throw error;
+    throw createHttpError(401, "Invalid credentials");
   }
-  const valid = await bcrypt.compare(dto.password, user.password);
+  const valid = await user.comparePassword(dto.password);
   if (!valid) {
-    const error: any = new Error("Invalid credentials");
-    error.statusCode = 401;
-    throw error;
+    throw createHttpError(401, "Invalid credentials");
   }
 
   // Generate access token (short expiry)
@@ -68,10 +57,9 @@ export const loginUserService = async (dto: LoginDTO) => {
   });
 
   // Save refresh token in user document (for revocation etc.)
-
   user.refreshTokens = user.refreshTokens || [];
   user.refreshTokens.push(refreshToken);
-  await user.save();
+  await user.save({ validateBeforeSave: false });
 
   return {
     token,
@@ -96,8 +84,7 @@ export const refreshAccessTokenService = async (refreshToken: string) => {
       throw new Error("User not found");
     }
 
-    user.refreshTokens = user.refreshTokens || [];
-    if (!user.refreshTokens.includes(refreshToken)) {
+    if (!user.refreshTokens?.includes(refreshToken)) {
       throw new Error("Refresh token revoked");
     }
 
@@ -114,15 +101,14 @@ export const refreshAccessTokenService = async (refreshToken: string) => {
     });
 
     // Remove old refresh token and add new one
-
     user.refreshTokens = user.refreshTokens || [];
     user.refreshTokens = user.refreshTokens.filter((t) => t !== refreshToken);
     user.refreshTokens.push(newRefreshToken);
-    await user.save();
+    await user.save({ validateBeforeSave: false });
 
     return { newToken, newRefreshToken };
-  } catch {
-    throw new Error("Invalid refresh token");
+  } catch (error) {
+    throw createHttpError(401, "Invalid refresh token");
   }
 };
 
@@ -130,9 +116,10 @@ export const logoutUserService = async (refreshToken: string) => {
   const user = await User.findOne({ refreshTokens: refreshToken });
   if (!user) return false;
 
-  user.refreshTokens = user.refreshTokens || [];
-  user.refreshTokens = user.refreshTokens.filter((t) => t !== refreshToken);
-  await user.save();
+  await User.updateOne(
+    { _id: user._id },
+    { $pull: { refreshTokens: refreshToken } }
+  );
   return true;
 };
 
@@ -144,14 +131,11 @@ interface ResetPasswordDTO {
 export const resetPasswordService = async (dto: ResetPasswordDTO) => {
   const user = await User.findOne({ email: dto.email });
   if (!user) {
-    const error: any = new Error("User not found");
-    error.statusCode = 404;
-    throw error;
+    throw createHttpError(404, "User not found");
   }
 
   // Hash new password
-  const hashedPassword = await bcrypt.hash(dto.password, 10);
-  user.password = hashedPassword;
+  user.password = dto.password;
   await user.save();
 
   return { success: true, message: "Password reset successful" };

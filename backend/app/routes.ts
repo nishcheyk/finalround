@@ -8,7 +8,7 @@ import appointmentRoutes from "./appointment/appointment.route";
 
 const router = Router();
 router.use((req, res, next) => {
-  console.log(` [main.route]`);
+  console.log(`[routes] Request to: ${req.method} ${req.originalUrl}`);
   next();
 });
 router.use("/users", userRoutes);
