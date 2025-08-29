@@ -267,3 +267,51 @@ notificationQueue.process("sendAppointmentConfirmation", async (job: Job) => {
     }
   }
 });
+
+notificationQueue.process("sendAppointmentReminder", async (job: Job) => {
+  const {
+    userEmail,
+    userPhone,
+    userName,
+    serviceName,
+    staffName,
+    appointmentTime,
+  } = job.data;
+  const formattedTime = new Date(appointmentTime).toLocaleString("en-US", {
+    dateStyle: "full",
+    timeStyle: "short",
+  });
+
+  if (userEmail) {
+    const emailHtml = `
+      <div style="font-family: sans-serif; line-height:1.5;">
+        <h1>Upcoming Appointment Reminder</h1>
+        <p>Dear ${userName},</p>
+        <p>This is a reminder for your upcoming appointment for <b>${serviceName}</b> with <b>${staffName}</b> on ${formattedTime}.</p>
+        <div style="font-size:12px;color:#888;margin-top:20px;text-align:center;">
+          &copy; 2025 75 WAYS technologies. All rights reserved.
+        </div>
+      </div>
+    `;
+    try {
+      await sendEmail({
+        to: userEmail,
+        subject: "Appointment Reminder",
+        html: emailHtml,
+      });
+      console.log(`Reminder email sent to ${userEmail}`);
+    } catch (err) {
+      console.error(`Failed to send reminder email to ${userEmail}`, err);
+    }
+  }
+
+  if (userPhone) {
+    try {
+      const smsBody = `Hi ${userName}, this is a reminder for your appointment for ${serviceName} with ${staffName} at ${formattedTime}.`;
+      await sendSMS(userPhone, smsBody);
+      console.log(`Reminder SMS sent to ${userPhone}`);
+    } catch (err) {
+      console.error(`Failed to send reminder SMS to ${userPhone}`, err);
+    }
+  }
+});
