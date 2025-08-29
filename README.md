@@ -1,40 +1,117 @@
-# Booking App – Full Stack Assessment
+# Appointment Booking System
+
+## Project Overview
+
+This project is a fully-featured **Appointment Booking System** with role-based access control, real-time notifications, and a secure, scalable architecture. It provides seamless interactions for **customers**, **staff**, and **admins**, ensuring optimized performance, modern UI/UX, and robust security.
+
+- Real-time updates and notifications for bookings, reschedules, and administrative actions.
+- Prevention of double-booking with unique indexes.
+- Optimized and responsive frontend with MUI, Tailwind, and RTK Query.
+- Secure backend with JWT authentication, OTP verification, and role-based access control.
+- Async job handling using **Bull Queue** and **Redis** for notifications.
+- Full API documentation via **Swagger UI**.
+
+**Demo Video:** [Watch Demo](https://drive.google.com/file/d/1HvOJSCgUAigSIv90B5fsuA30ZyV1B80U/view?usp=sharing)
+
+### MongoDB Database
+
+![MongoDB Screenshot](./assets/Screenshot%202025-08-29%20at%206.28.02 PM.png)
+
+![User Screenshot](./assets/user.png)
+
+![Appointment Screenshot](./assets/appointment.png)
+
+![Notification Screenshot](./assets/notification.png)
+
+![OTP Screenshot](./assets/otp.png)
+
+IT IS EMPTY BECAUSE ONCE VERFIED IT DELETE IT
+
+![Services Screenshot](./assets/services.png)
+
+---
 
 ## Features
 
-- **Theme Selection & System Theme Sync:**
-  - Users can switch between light, dark, and system themes using the ThemeSelector component.
-  - The app detects the user's OS/system theme preference and applies it automatically if 'system' is selected.
-  - Theme changes are instant and global, affecting all UI components (MUI + Tailwind).
-  - Theme preference is stored in Redux and persists across sessions.
-  - Includes beautiful transitions and accessibility support.
+### Theme Selection & System Theme Sync
 
-- **Role-Based Access:** Separate flows and permissions for Admin, Staff, and Customer. Admins manage everything, staff manage their own appointments, customers book/manage their own.
-- **3-Way Notification System:** Every important action (booking, reschedule, admin message) triggers notifications via:
-  - **In-App:** Real-time, with unread/read tracking and dropdown UI.
-  - **Email:** Sent via SMTP, customizable templates.
-  - **SMS:** Sent via Twilio, instant delivery.
-- **Appointment Booking & Rescheduling:**
-  - Customers can book, view, and reschedule appointments.
-  - Staff can see/manage their own schedule.
-  - Double-booking is prevented by unique indexes.
-- **Admin Dashboard:**
-  - Manage users, staff, services, appointments, and notifications.
-  - Send global or targeted notifications (in-app, email, SMS).
-  - View notification stats and read/unread status.
-- **Security:**
-  - JWT authentication, role-based middleware, OTP for sensitive actions, rate limiting, CORS, and input validation.
-- **Modern Frontend:**
-  - React + MUI + Tailwind + RTK Query for a responsive, elegant UI.
-  - Card-based appointment display, dropdown time selection, skeleton loaders, and notification dropdown.
-- **Scalable Backend:**
-  - Node.js, Express, MongoDB, Bull Queue, Redis for async jobs and reliability.
-- **API Documentation:**
-  - Swagger UI at `/api-docs` for interactive API exploration.
-- **Environment Config:**
-  - All secrets and service credentials are managed via `.env`.
+- Users can switch between **light**, **dark**, and **system themes** using the `ThemeSelector` component.
+- Automatic detection of the user's OS/system theme if 'system' is selected.
+- Instant and global theme changes affecting all UI components (MUI + Tailwind).
+- Theme preference is stored in Redux and persists across sessions.
+- Includes smooth transitions and accessibility support.
 
----
+### Role-Based Access
+
+- Separate flows and permissions for **Admin**, **Staff**, and **Customer**.
+- **Admin:** Full access to manage users, staff, services, appointments, and notifications.
+- **Staff:** Manage own appointments and availability.
+- **Customer:** Book, view, and reschedule appointments.
+
+### 3-Way Notification System
+
+- **In-App:** Real-time notifications with read/unread tracking and dropdown UI.
+- **Email:** Sent via SMTP with customizable templates.
+- **SMS:** Sent via Twilio for instant delivery.
+
+### OTP-Based Forget Password
+
+- OTP sent to the user for verification.
+- Temporarily stored in the backend; deleted once verified.
+- Verified users can securely reset their password.
+
+### Appointment Booking & Rescheduling
+
+- Customers can book, view, and reschedule appointments.
+- Staff can view/manage their schedules.
+- Customers and staff both receive **phone notifications and emails** for confirmations and reschedules.
+- Double-booking prevention ensures a slot cannot be booked more than once.
+
+### Admin Dashboard
+
+- Manage users, staff, services, appointments, and notifications.
+- Send **global or targeted notifications** via in-app, email, or SMS.
+- View notification stats and track read/unread status.
+
+### Security
+
+- JWT authentication and role-based middleware.
+- OTP for sensitive actions and password resets.
+- Rate limiting, CORS protection, input validation, and secure password hashing.
+
+### Modern Frontend
+
+- Built with **React + MUI + Tailwind + RTK Query** for responsive and elegant UI.
+- Card-based appointment display, dropdown time selection, skeleton loaders, and notification dropdowns.
+- Custom loaders using **Lottie animations**.
+- Error boundaries display errors with retry buttons and hard reload options.
+
+### Scalable Backend
+
+- **Node.js + Express + MongoDB** architecture.
+- Async jobs handled with **Bull Queue** and **Redis**.
+- Secure, modular, and optimized API endpoints.
+
+### API Documentation
+
+- Interactive **Swagger UI** available at `/api-docs` for exploring all endpoints.
+
+### Optimizations
+
+- React.memo, useCallback, modular components, and error boundaries.
+- Custom loaders for better UX during API calls.
+- Focus on security and performance.
+
+### Additional Features
+
+- Users cannot book the same slot twice.
+- Skeleton loaders and custom error boundaries improve UX.
+- Full logging for debugging and analytics.
+- Easy to extend with new services or staff members.
+
+**Demo Video:** [Watch Demo](Insert-Video-Link-Here)  
+**Project Screenshot:**  
+![App Screenshot](Insert-Image-URL-Here)
 
 ## Table of Contents
 
@@ -72,7 +149,6 @@ This is a robust, production-grade event/appointment booking platform with a foc
 
 - `/backend`: Node.js, Express, TypeScript, MongoDB, Bull, Redis
 - `/frontend`: React, TypeScript, Vite, MUI, Tailwind, RTK Query
-- `/images`: Screenshots, diagrams
 
 **Notification Flow:**
 
@@ -476,12 +552,6 @@ MIT# Full Stack Event Booking & Notification Platform
 
 ---
 
-## Overview
-
-A robust, scalable full-stack application for event booking and real-time notifications. Built with Node.js, TypeScript, Express, MongoDB (backend), and React, TypeScript, Vite, MUI, Tailwind CSS (frontend). Features include user authentication, admin dashboard, event management, and a powerful notification system with read-tracking and global/personal targeting.
-
----
-
 ## Backend Middleware (Explained)
 
 Middleware functions are used in Express to process requests before they reach route handlers. This project uses several types of middleware for security, validation, error handling, and more:
@@ -518,79 +588,6 @@ Middleware functions are used in Express to process requests before they reach r
   - Logs all incoming requests for debugging and monitoring.
 
 All middleware is modularized in `/backend/app/common/middlewares/` and applied in `index.ts` or at the router level.
-
----
-
-## Major Use Cases & How They Are Handled
-
-### 1. User Registration & Authentication
-
-- **Register:** User submits registration form → validated → user created in DB → JWT issued.
-- **Login:** User submits credentials → validated → JWT issued on success.
-- **Password Reset:** User requests OTP → receives via email/SMS → submits OTP + new password → verified and updated.
-
-### 2. Event Management
-
-- **Create Event (admin):** Admin submits event details → validated → event created in DB.
-- **List Events:** Any user fetches events list.
-- **Book Event:** Authenticated user selects event/seat → booking created → QR code generated.
-
-### 3. Notification System
-
-- **Admin Creates Notification:** Admin submits notification (global or targeted) → validated → notification saved → users notified (email/SMS, in-app).
-- **User Receives Notification:** User sees notification in dropdown and via email/SMS.
-- **Mark as Read:** User marks notification as read (single or all) → backend updates read status.
-- **Admin Views Read Status:** Admin fetches read/unread users for any notification.
-- **Delete Notification:** Admin deletes notification → removed from DB and user views.
-
-### 4. Role-Based Access
-
-- **Protected Routes:** Middleware checks JWT and user role before allowing access to sensitive endpoints (admin dashboard, notification management, user management).
-
-### 5. Security & Reliability
-
-- **Rate Limiting:** Prevents abuse of login/OTP endpoints.
-- **Error Handling:** All errors are caught and returned in a consistent format.
-- **CORS:** Only allows requests from trusted frontend origins.
-
----
-
-### Backend (`/backend`)
-
-- **index.ts**: Entry point, sets up Express app, connects to MongoDB, applies middleware, and mounts routes.
-- **docker-compose.yml / Dockerfile**: For containerized deployment.
-- **swagger.ts / swagger.json**: Swagger API documentation setup.
-- **app/ **: Main application code.
-  - **routes.ts**: Combines all route modules (`/users`, `/otp`, `/notifications`).
-  - **common/ **: Shared logic.
-    - **dto/ **: Data transfer objects (request/response schemas).
-    - **helper/ **: Utility functions (e.g., email, SMS helpers).
-    - **middlewares/ **: Auth, validation, error handling, OTP verification, rate limiting.
-    - **services/ **: Shared business logic (e.g., mail, SMS, queue).
-  - **notifications/ **: Notification system.
-    - **notification.controller.ts**: Handles notification API requests (create, list, mark as read, stats, etc).
-    - **notification.route.ts**: Express router for notification endpoints.
-    - **notification.schema.ts**: Mongoose schema/model for notifications.
-    - **notification.service.ts**: Business logic for notifications.
-  - **otp/ **: OTP system (controller, route, schema, service for OTP generation/verification).
-  - **users/ **: User management (controller, route, schema, service for registration, login, etc).
-  - **types/ **: TypeScript type definitions for Express and app-wide types.
-
-### Frontend (`/frontend`)
-
-- **src/ **: Main source code.
-  - **App.tsx**: Main app component, sets up routes and layouts.
-  - **main.tsx**: Entry point, sets up Redux, theme, router, and renders the app.
-  - **components/ **: Reusable UI components (forms, dialogs, notification dropdown, theme selector, etc).
-    - **hocs/ **: Higher-order components for auth/role protection.
-    - **ui/ **: UI primitives and wrappers.
-  - **layouts / **: Layout wrappers (Authenticated, Basic).
-  - **pages/ **: Page-level components (AdminNotifications, Home, Login, Register, etc).
-  - **services/ **: API logic (RTK Query endpoints for backend APIs).
-  - **store/ **: Redux slices (auth, theme, etc) and hooks.
-  - **styles/ **: CSS/Tailwind styles.
-  - **types/ **: TypeScript types for notifications, users, etc.
-  - **themes.ts / theme.d.ts**: MUI theme setup and type augmentation.
 
 ---
 
@@ -662,48 +659,6 @@ All routes are prefixed with `/api`.
 
 ---
 
-## Overview
-
-A robust, scalable full-stack application for event booking and real-time notifications. Built with Node.js, TypeScript, Express, MongoDB (backend), and React, TypeScript, Vite, MUI, Tailwind CSS (frontend). Features include user authentication, admin dashboard, event management, and a powerful notification system with read-tracking and global/personal targeting.
-
----
-
-## Table of Contents
-
-- [Tech Stack](#tech-stack)
-- [Backend Features](#backend-features)
-- [Frontend Features](#frontend-features)
-- [Notification System (Admin/User)](#notification-system-adminuser)
-- [API Structure & Endpoints](#api-structure--endpoints)
-- [Frontend Code Structure & Optimization](#frontend-code-structure--optimization)
-- [Theme Handling (MUI + Tailwind)](#theme-handling-mui--tailwind)
-- [Setup & Running](#setup--running)
-- [Swagger & API Docs](#swagger--api-docs)
-
----
-
-## Tech Stack
-
-### Backend
-
-- Node.js, Express, TypeScript
-- MongoDB (Mongoose ODM)
-- JWT Auth, bcryptjs, express-rate-limit
-- Nodemailer (SMTP), Twilio (SMS), Redis + Bull (job queue)
-- Docker, Docker Compose
-- Swagger for API docs
-
-### Frontend
-
-- React, TypeScript, Vite
-- MUI (Material UI) for components
-- Tailwind CSS for utility-first styling
-- Redux Toolkit (state management)
-- React Router, React Hook Form, Yup
-- Framer Motion, Lucide Icons
-
----
-
 ## Backend Features
 
 - **User Management:** Register, login, JWT auth, admin/user roles, password reset (OTP via email/SMS)
@@ -740,8 +695,6 @@ A robust, scalable full-stack application for event booking and real-time notifi
 - **Hooks & State:**
   - Custom hooks for API, theme, auth
   - Redux Toolkit for global state
-- **Optimizations:**
-  - React.memo, useCallback, modular components, error boundaries, loading spinners
 
 ---
 
@@ -817,7 +770,7 @@ A robust, scalable full-stack application for event booking and real-time notifi
 1. `cd backend`
 2. `npm install`
 3. Configure `.env` (see sample in backend README)
-4. `npm start` (or use Docker Compose)
+4. `npm run build   npm run dev` (or use Docker Compose)
 5. API docs at `http://localhost:3000/api-docs`
 
 ### Frontend
@@ -844,14 +797,6 @@ A robust, scalable full-stack application for event booking and real-time notifi
 - Async/await, error boundaries, and background jobs for reliability
 - Theme and UI optimized for accessibility and responsiveness
 
----
-
-## Images & Visuals
-
-- See `/images/` for screenshots and diagrams
-
----
-
 ## Authors
 
 - Nishchey Khajuiria
@@ -864,5 +809,6 @@ A robust, scalable full-stack application for event booking and real-time notifi
 For questions or support, open an issue or contact the maintainer. github: nishcheyk
 
 ```
+
 
 ```
