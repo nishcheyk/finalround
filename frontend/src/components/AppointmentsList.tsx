@@ -1,6 +1,4 @@
-/* The above code is a TypeScript React component called `AppointmentsList`. Here is a summary of what
-the code is doing: */
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Box,
   Button,
@@ -18,20 +16,22 @@ import {
   Select,
   MenuItem,
   Skeleton,
+  CircularProgress,
 } from "@mui/material";
 import { motion } from "framer-motion";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
+import { DateTime } from "luxon";
 import {
   useGetStaffQuery,
   useGetServicesQuery,
   useCancelAppointmentMutation,
   useRescheduleAppointmentMutation,
   useGetUserAppointmentsQuery,
+  useGetBusySlotsForStaffQuery,
 } from "../services/api";
 
-/* The above code is a TypeScript React component called `AppointmentsList`. */
 export function AppointmentsList() {
   const theme = useTheme();
   const isSmUp = useMediaQuery(theme.breakpoints.up("sm"));
@@ -45,69 +45,122 @@ export function AppointmentsList() {
   const [cancelAppointment] = useCancelAppointmentMutation();
   const [rescheduleAppointment] = useRescheduleAppointmentMutation();
 
-  const { data: staffData, isLoading: staffLoading } = useGetStaffQuery();
-  const { data: servicesData } = useGetServicesQuery();
 
-  // Reschedule dialog state
-  /* These lines of code are initializing state variables using the `useState` hook in a TypeScript
-  React component called `AppointmentsList`. Here is a breakdown of what each state variable is used
-  for: */
   const [rescheduleId, setRescheduleId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedStaff, setSelectedStaff] = useState("");
   const [selectedService, setSelectedService] = useState("");
-  const [selectedTime, setSelectedTime] = useState("");
+  const [selectedStaff, setSelectedStaff] = useState("");
+  const [selectedSlot, setSelectedSlot] = useState<string>(""); // store ISO UTC string
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
     severity: "success" as "success" | "error" | "warning" | "info",
   });
 
-  const slotOptions = useMemo(() => {
-    if (!selectedDate) return [];
+  const { data: servicesData, isLoading: servicesLoading } = useGetServicesQuery();
+  const { data: staffData, isLoading: staffLoading } = useGetStaffQuery();
+  console.log("Staff data:", staffData);
 
-    const startHour = 9;
-    const endHour = 22; // slots from 9 AM to 10 PM
-    const duration = 30; // 30 mins slot duration
-    const baseDate = new Date(selectedDate);
-    baseDate.setHours(0, 0, 0, 0);
+  const staffList = useMemo(() => {
+    if (!staffData) return [];
+    return (staffData as any)?.data || staffData || [];
+  }, [staffData]);
 
-    const slots = [];
-    for (
-      let mins = startHour * 60;
-      mins + duration <= endHour * 60;
-      mins += duration
-    ) {
-      const slotDate = new Date(baseDate.getTime() + mins * 60000);
-      const slotISO = slotDate.toISOString();
-      slots.push({
-        value: slotISO,
-        label: slotDate.toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      });
-    }
-    return slots;
+
+  const staffTimeZone: string = "Asia/Kolkata";
+
+
+  const dateParam = useMemo(() => {
+    if (!selectedDate) return "";
+
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
   }, [selectedDate]);
 
-  // Reset selectedTime if it’s not a valid option (to avoid MUI warnings)
-  useEffect(() => {
-    if (
-      selectedTime &&
-      !slotOptions.some((slot) => slot.value === selectedTime)
-    ) {
-      setSelectedTime("");
-    }
-  }, [slotOptions, selectedTime]);
 
-  /**
-   * The function `handleCancel` cancels an appointment, displays a success message if successful, and
-   * an error message if unsuccessful.
-   * @param {string} appointmentId - The `appointmentId` parameter is a string that represents the
-   * unique identifier of the appointment that needs to be cancelled. This identifier is used to locate
-   * and cancel the specific appointment in the system.
-   */
+  const {
+    data: busySlotsData,
+    isLoading: busySlotsLoading,
+    refetch: refetchBusySlots
+  } = useGetBusySlotsForStaffQuery(
+    { staffId: selectedStaff, date: dateParam },
+    { skip: !selectedStaff || !selectedDate || !dateParam }
+  );
+
+
+  const servicesList = useMemo(() => {
+    if (!servicesData) return [];
+    return (servicesData as any)?.data || servicesData || [];
+  }, [servicesData]);
+
+
+  const slotOptions = useMemo(() => {
+    if (!selectedDate || !selectedService || !servicesList.length) return [];
+
+    const service = servicesList.find((s: any) => s._id === selectedService);
+    if (!service) return [];
+
+    const duration: number = service.duration; // minutes
+    const startHour = 9;  // opening hour in staff timezone
+    const endHour = 22;   // closing hour in staff timezone
+
+
+
+    const busySlots: string[] = (() => {
+      if (!busySlotsData) return [];
+      // Handle the API response structure correctly
+      if (busySlotsData.success && Array.isArray(busySlotsData.data)) {
+        return busySlotsData.data;
+      }
+      // Fallback for other response formats
+      const data = (busySlotsData as any)?.data || busySlotsData;
+      return Array.isArray(data) ? data : [];
+    })();
+
+    console.log("Received busy slots from backend:", busySlots);
+
+    // Create set for O(1) lookup
+    const busySet = new Set(busySlots);
+
+    // Generate slots for the selected calendar date in staff timezone
+    const dayStartInStaffTz = DateTime.fromJSDate(selectedDate)
+      .setZone(staffTimeZone)
+      .startOf("day");
+
+    const slots: Array<{ value: string; label: string }> = [];
+
+    // Generate slots for business hours
+    for (let mins = startHour * 60; mins + duration <= endHour * 60; mins += duration) {
+      const slotInStaffTz = dayStartInStaffTz.plus({ minutes: mins });
+      const slotUtc = slotInStaffTz.toUTC();
+      const slotUtcISO = slotUtc.toISO();
+
+      // Debug: Log slot generation
+      console.log("Generated slot:", {
+        staffTz: slotInStaffTz.toISO(),
+        utc: slotUtcISO,
+        valid: slotUtc.isValid,
+        isBusy: busySet.has(slotUtcISO || "")
+      });
+
+      if (!slotUtcISO || !slotUtc.isValid) continue;
+
+      // Check if this UTC time slot is busy
+      if (!busySet.has(slotUtcISO)) {
+        slots.push({
+          value: slotUtcISO, // Send UTC ISO to backend
+          label: slotInStaffTz.toFormat("hh:mm a"), // Display in staff timezone
+        });
+      }
+    }
+
+    console.log("Generated available slots:", slots.length);
+    return slots;
+  }, [busySlotsData, selectedDate, selectedService, servicesList, staffTimeZone]);
+
   const handleCancel = async (appointmentId: string) => {
     try {
       await cancelAppointment(appointmentId).unwrap();
@@ -126,65 +179,50 @@ export function AppointmentsList() {
     }
   };
 
- /**
-  * The function `handleOpenReschedule` sets the state with appointment details for rescheduling.
-  * @param {any} appointment - The `handleOpenReschedule` function takes an `appointment` object as a
-  * parameter. The appointment object likely contains information about a scheduled appointment, such
-  * as `_id`, `startTime`, `staffId`, and `serviceId`. The function then sets various state variables
-  * based on the values from the `
-  */
   const handleOpenReschedule = (appointment: any) => {
+    console.log("Opening reschedule for appointment:", appointment);
+
     setRescheduleId(appointment._id);
-    setSelectedDate(new Date(appointment.startTime));
-    setSelectedStaff(appointment.staffId);
-    setSelectedService(appointment.serviceId);
-    setSelectedTime(new Date(appointment.startTime).toISOString());
+    const appointmentDate = new Date(appointment.startTime);
+    setSelectedDate(appointmentDate);
+    setSelectedStaff(appointment.staff?._id || appointment.staff);
+    setSelectedService(appointment.service?._id || appointment.service);
+    setSelectedSlot("");
   };
 
- /**
-  * The function `handleConfirmReschedule` checks for required fields, sends a request to reschedule an
-  * appointment, and displays a corresponding message based on the outcome.
-  * @returns If any of the required fields are missing, a warning message is set in the snackbar and
-  * the function returns without further execution. If all required fields are present, an attempt is
-  * made to reschedule the appointment using the provided data. If successful, a success message is set
-  * in the snackbar, the reschedule modal is closed, and a refetch is triggered. If an error occurs
-  * during the
-  */
   const handleConfirmReschedule = async () => {
-    if (
-      !rescheduleId ||
-      !selectedDate ||
-      !selectedStaff ||
-      !selectedService ||
-      !selectedTime
-    ) {
-      setSnackbar({
-        open: true,
-        message: "Please select all fields before confirming.",
-        severity: "warning",
-      });
-      return;
-    }
+    if (!selectedSlot) return;
+
+    // Debug: Log what we're sending
+    console.log("Sending reschedule data to backend:", selectedSlot);
+    console.log("Parsed DateTime:", DateTime.fromISO(selectedSlot));
 
     try {
-      const payload = {
-        id: rescheduleId,
-        newStartTime: selectedTime,
+      await rescheduleAppointment({
+        id: rescheduleId!,
+        newStartTime: selectedSlot, // UTC ISO string
         staffId: selectedStaff,
         serviceId: selectedService,
-      };
-
-      await rescheduleAppointment(payload).unwrap();
+      }).unwrap();
 
       setSnackbar({
         open: true,
-        message: "Appointment rescheduled successfully.",
+        message: "Appointment rescheduled successfully!",
         severity: "success",
       });
 
+      // Reset form and refresh busy slots to show updated availability
+      setSelectedSlot("");
       handleCloseReschedule();
       refetch();
+
+      // Refetch busy slots to update the available time slots
+      if (selectedStaff && dateParam) {
+        refetchBusySlots();
+      }
+
     } catch (error: any) {
+      console.error("Reschedule error:", error);
       setSnackbar({
         open: true,
         message: error?.data?.message || "Failed to reschedule appointment.",
@@ -193,16 +231,28 @@ export function AppointmentsList() {
     }
   };
 
-/**
- * The `handleCloseReschedule` function resets the state values for rescheduleId, selectedDate,
- * selectedStaff, selectedService, and selectedTime to null or an empty string.
- */
   const handleCloseReschedule = () => {
     setRescheduleId(null);
     setSelectedDate(null);
     setSelectedStaff("");
     setSelectedService("");
-    setSelectedTime("");
+    setSelectedSlot("");
+  };
+
+  const getConfirmationTime = (utcIsoString: string) => {
+    const dt = DateTime.fromISO(utcIsoString);
+    if (!dt.isValid) return "";
+    return dt.setZone(staffTimeZone).toFormat("hh:mm a");
+  };
+
+  const getSelectedDateDisplay = () => {
+    if (!selectedDate) return "";
+    return DateTime.fromJSDate(selectedDate).toFormat("EEEE, MMMM dd, yyyy");
+  };
+
+  const formatAppointmentTime = (startTime: string | Date) => {
+    const dt = DateTime.fromJSDate(new Date(startTime));
+    return dt.setZone(staffTimeZone).toFormat("EEEE, MMMM dd, yyyy 'at' hh:mm a");
   };
 
   return (
@@ -212,7 +262,6 @@ export function AppointmentsList() {
       </Typography>
 
       {appointmentsLoading ? (
-        // Skeleton loading state
         <Box
           sx={{
             display: "grid",
@@ -271,7 +320,10 @@ export function AppointmentsList() {
                   {appt.service?.name}
                 </Typography>
                 <Typography variant="body2" mb={1}>
-                  {new Date(appt.startTime).toLocaleString()}
+                  {formatAppointmentTime(appt.startTime)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" mb={1}>
+                  Staff: {appt.staff?.user?.name || "Unknown"}
                 </Typography>
                 <Typography
                   variant="caption"
@@ -296,6 +348,7 @@ export function AppointmentsList() {
                     color="error"
                     onClick={() => handleCancel(appt._id)}
                     disabled={appt.status === "cancelled"}
+                    size="small"
                   >
                     Cancel
                   </Button>
@@ -303,6 +356,7 @@ export function AppointmentsList() {
                     variant="outlined"
                     onClick={() => handleOpenReschedule(appt)}
                     disabled={appt.status === "cancelled"}
+                    size="small"
                   >
                     Reschedule
                   </Button>
@@ -315,78 +369,169 @@ export function AppointmentsList() {
         <Typography>No appointments found</Typography>
       )}
 
+
       <Dialog
         open={Boolean(rescheduleId)}
         onClose={handleCloseReschedule}
-        maxWidth="xs"
+        maxWidth="sm"
         fullWidth
       >
         <DialogTitle>Reschedule Appointment</DialogTitle>
-        <DialogContent
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-          }}
-        >
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <DateCalendar
-              value={selectedDate}
-              onChange={setSelectedDate}
-              disablePast
-            />
-          </LocalizationProvider>
+        <DialogContent sx={{ pt: 2 }}>
+          <Box>
 
-          <FormControl fullWidth>
-            <InputLabel>Staff</InputLabel>
-            <Select
-              value={selectedStaff}
-              onChange={(e) => setSelectedStaff(e.target.value)}
-              label="Staff"
-            >
-              {staffData?.data?.map((staff: any) => (
-                <MenuItem key={staff._id} value={staff._id}>
-                  {staff.user?.name || "Staff"}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+            <FormControl sx={{ minWidth: 220, mr: 2, mb: 2 }}>
+              {servicesLoading ? (
+                <Skeleton variant="rectangular" height={56} />
+              ) : (
+                <>
+                  <InputLabel>Service</InputLabel>
+                  <Select
+                    value={selectedService}
+                    onChange={(e) => {
+                      setSelectedService(e.target.value);
+                      setSelectedSlot(""); // Reset slot when service changes
+                    }}
+                    label="Service"
+                    disabled={servicesLoading}
+                  >
+                    {servicesList.map((service: any) => (
+                      <MenuItem key={service._id} value={service._id}>
+                        {service.name} ({service.duration} min)
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </>
+              )}
+            </FormControl>
 
-          <FormControl fullWidth>
-            <InputLabel>Service</InputLabel>
-            <Select
-              value={selectedService}
-              onChange={(e) => setSelectedService(e.target.value)}
-              label="Service"
-            >
-              {servicesData?.data?.map((service: any) => (
-                <MenuItem key={service._id} value={service._id}>
-                  {service.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
 
-          <FormControl fullWidth sx={{ mt: 2 }}>
-            <InputLabel>Time</InputLabel>
-            <Select
-              value={selectedTime}
-              onChange={(e) => setSelectedTime(e.target.value)}
-              label="Time"
-              disabled={!selectedDate}
-            >
-              {slotOptions.map((slot) => (
-                <MenuItem key={slot.value} value={slot.value}>
-                  {slot.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+            <FormControl sx={{ minWidth: 220, mb: 2 }}>
+              {staffLoading ? (
+                <Skeleton variant="rectangular" height={56} />
+              ) : (
+                <>
+                  <InputLabel>Staff</InputLabel>
+                  <Select
+                    value={selectedStaff}
+                    onChange={(e) => {
+                      setSelectedStaff(e.target.value);
+                      setSelectedSlot(""); // Reset slot when staff changes
+                    }}
+                    label="Staff"
+                    disabled={staffLoading}
+                  >
+                    {staffList.map((staff: any) => (
+                      <MenuItem key={staff._id} value={staff._id}>
+                        {staff?.user?.name || "Staff"}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </>
+              )}
+            </FormControl>
+
+
+            {servicesLoading || staffLoading ? (
+              <Skeleton variant="rectangular" height={280} sx={{ mb: 3 }} />
+            ) : (
+              <Box sx={{ mb: 3 }}>
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <DateCalendar
+                    value={selectedDate}
+                    onChange={(newDate) => {
+                      setSelectedDate(newDate);
+                      setSelectedSlot(""); // Reset slot when date changes
+                    }}
+                    disablePast
+                    sx={{ mb: 2 }}
+                  />
+                </LocalizationProvider>
+                {selectedDate && (
+                  <Typography variant="body2" color="text.secondary">
+                    Selected: {getSelectedDateDisplay()}
+                  </Typography>
+                )}
+              </Box>
+            )}
+
+
+            {busySlotsLoading && selectedDate && selectedStaff && (
+              <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
+                <CircularProgress size={24} />
+                <Typography sx={{ ml: 2 }}>Loading available times...</Typography>
+              </Box>
+            )}
+
+
+            {slotOptions.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <FormControl sx={{ minWidth: 220, mb: 3 }}>
+                  <InputLabel>Available Times</InputLabel>
+                  <Select
+                    label="Available Times"
+                    value={selectedSlot}
+                    onChange={(e) => setSelectedSlot(e.target.value)}
+                    disabled={busySlotsLoading}
+                  >
+                    {slotOptions.map((slot) => (
+                      <MenuItem key={slot.value} value={slot.value}>
+                        {slot.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+          
+                {selectedSlot && (
+                  <Box sx={{ textAlign: "center", mt: 2 }}>
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                      New Appointment Details:
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Date: {getSelectedDateDisplay()}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Time: {getConfirmationTime(selectedSlot)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                      Service: {servicesList.find(s => s._id === selectedService)?.name}
+                    </Typography>
+                  </Box>
+                )}
+              </motion.div>
+            )}
+
+
+            {slotOptions.length === 0 &&
+             selectedDate &&
+             selectedService &&
+             selectedStaff &&
+             !busySlotsLoading && (
+              <Typography color="text.secondary" sx={{ mt: 3, textAlign: "center" }}>
+                No available slots for the selected date, staff, and service.
+                <br />
+                Please select another date or staff member.
+              </Typography>
+            )}
+          </Box>
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={handleCloseReschedule}>Cancel</Button>
-          <Button onClick={handleConfirmReschedule}>Confirm</Button>
+        <DialogActions sx={{ p: 3, pt: 1 }}>
+          <Button onClick={handleCloseReschedule} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmReschedule}
+            variant="contained"
+            disabled={!selectedSlot}
+          >
+            Confirm Reschedule
+          </Button>
         </DialogActions>
       </Dialog>
 

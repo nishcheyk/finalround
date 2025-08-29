@@ -1,183 +1,16 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Event Booking API",
+    "title": "Appointment Booking API",
     "version": "1.0.0",
-    "description": "API for user registration, login, event management, and ticket booking with separate booking management for seats"
+    "description": "API for users, staff, services, appointments, and OTP verification"
   },
   "servers": [
     {
-      "url": "http://localhost:3000/api"
+      "url": "http://localhost:3000/api",
+      "description": "Local server"
     }
   ],
-  "components": {
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
-      }
-    },
-    "schemas": {
-      "UserRegister": {
-        "type": "object",
-        "required": ["name", "email", "phone", "password"],
-        "properties": {
-          "name": { "type": "string", "example": "John Doe" },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "example": "johndoe@example.com"
-          },
-          "phone": { "type": "string", "example": "+1234567890" },
-          "password": {
-            "type": "string",
-            "format": "password",
-            "example": "Password123"
-          }
-        }
-      },
-      "UserLogin": {
-        "type": "object",
-        "required": ["email", "password"],
-        "properties": {
-          "email": {
-            "type": "string",
-            "format": "email",
-            "example": "johndoe@example.com"
-          },
-          "password": {
-            "type": "string",
-            "format": "password",
-            "example": "Password123"
-          }
-        }
-      },
-      "AuthToken": {
-        "type": "object",
-        "properties": {
-          "token": {
-            "type": "string",
-            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI..."
-          }
-        }
-      },
-      "EventCreate": {
-        "type": "object",
-        "required": ["title", "description", "date", "totalSeats"],
-        "properties": {
-          "title": { "type": "string", "example": "Sample Event" },
-          "description": {
-            "type": "string",
-            "example": "This is a sample event description."
-          },
-          "date": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2025-08-15T19:00:00.000Z"
-          },
-          "totalSeats": { "type": "integer", "example": 100 }
-        }
-      },
-      "EventResponse": {
-        "type": "object",
-        "properties": {
-          "_id": { "type": "string", "example": "612e1b9f1f1e4b001abc1234" },
-          "title": { "type": "string", "example": "Sample Event" },
-          "description": {
-            "type": "string",
-            "example": "This is a sample event description."
-          },
-          "date": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2025-08-15T19:00:00.000Z"
-          },
-          "totalSeats": { "type": "integer", "example": 100 }
-        }
-      },
-      "EventResponseWithMessage": {
-        "type": "object",
-        "properties": {
-          "message": { "type": "string", "example": "Event created" },
-          "event": { "$ref": "#/components/schemas/EventResponse" }
-        }
-      },
-      "BookTicketRequest": {
-        "type": "object",
-        "required": ["eventId", "seatNumber", "phone", "userId", "email"],
-        "properties": {
-          "eventId": {
-            "type": "string",
-            "example": "612e1b9f1f1e4b001abc1234"
-          },
-          "seatNumber": { "type": "integer", "example": 5 },
-          "phone": { "type": "string", "example": "+1234567890" },
-          "userId": { "type": "string", "example": "5f8f8c44b54764421b7156c6" },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "example": "user@example.com"
-          }
-        }
-      },
-      "BookTicketResponse": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string",
-            "example": "Ticket booked successfully"
-          },
-          "booking": {
-            "type": "object",
-            "description": "Booking details including QR code",
-            "properties": {
-              "_id": {
-                "type": "string",
-                "example": "612e1b9f1f1e4b001abc5678"
-              },
-              "eventId": {
-                "type": "string",
-                "example": "612e1b9f1f1e4b001abc1234"
-              },
-              "userId": {
-                "type": "string",
-                "example": "5f8f8c44b54764421b7156c6"
-              },
-              "seatNumber": { "type": "integer", "example": 5 },
-              "qrCode": {
-                "type": "string",
-                "example": "<base64encoded string>"
-              },
-              "status": {
-                "type": "string",
-                "enum": ["booked", "cancelled"],
-                "example": "booked"
-              }
-            }
-          }
-        }
-      },
-      "Booking": {
-        "type": "object",
-        "properties": {
-          "_id": { "type": "string", "example": "612e1b9f1f1e4b001abc5678" },
-          "eventId": {
-            "type": "string",
-            "example": "612e1b9f1f1e4b001abc1234"
-          },
-          "userId": { "type": "string", "example": "5f8f8c44b54764421b7156c6" },
-          "seatNumber": { "type": "integer", "example": 5 },
-          "qrCode": { "type": "string", "example": "<base64encoded string>" },
-          "status": {
-            "type": "string",
-            "enum": ["booked", "cancelled"],
-            "example": "booked"
-          }
-        }
-      }
-    }
-  },
   "paths": {
     "/users/register": {
       "post": {
@@ -187,38 +20,28 @@
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/UserRegister" }
+              "schema": {
+                "$ref": "#/components/schemas/UserRegister"
+              }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "User successfully registered",
+            "description": "User registered successfully",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "User Registered!"
-                    },
-                    "userId": {
-                      "type": "string",
-                      "example": "605c3c2b8a92c65a30f0e4f1"
-                    }
-                  }
-                }
+                "schema": { "$ref": "#/components/schemas/UserResponse" }
               }
             }
           },
-          "400": { "description": "Email already exists" }
+          "400": { "description": "Validation error" }
         }
       }
     },
     "/users/login": {
       "post": {
-        "summary": "User login to receive JWT token",
+        "summary": "User login",
         "tags": ["Users"],
         "requestBody": {
           "required": true,
@@ -230,10 +53,10 @@
         },
         "responses": {
           "200": {
-            "description": "Successful login with token",
+            "description": "Login successful",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/AuthToken" }
+                "schema": { "$ref": "#/components/schemas/UserResponse" }
               }
             }
           },
@@ -241,18 +64,67 @@
         }
       }
     },
-    "/events": {
+    "/users/refresh-token": {
+      "post": {
+        "summary": "Refresh auth token",
+        "tags": ["Users"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RefreshTokenRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Token refreshed" },
+          "400": { "description": "Invalid token" }
+        }
+      }
+    },
+    "/users/logout": {
+      "post": {
+        "summary": "Logout user",
+        "tags": ["Users"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LogoutRequest" }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Logged out successfully" } }
+      }
+    },
+    "/users/reset-password": {
+      "post": {
+        "summary": "Reset user password",
+        "tags": ["Users"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ResetPasswordRequest" }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Password reset successful" } }
+      }
+    },
+    "/staff": {
       "get": {
-        "summary": "List all events",
-        "tags": ["Events"],
+        "summary": "Get all staff",
+        "tags": ["Staff"],
         "responses": {
           "200": {
-            "description": "A list of events",
+            "description": "List of staff",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "items": { "$ref": "#/components/schemas/EventResponse" }
+                  "items": { "$ref": "#/components/schemas/Staff" }
                 }
               }
             }
@@ -260,167 +132,325 @@
         }
       },
       "post": {
-        "summary": "Create a new event",
-        "tags": ["Events"],
+        "summary": "Create staff",
+        "tags": ["Staff"],
         "security": [{ "bearerAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/EventCreate" }
+              "schema": { "$ref": "#/components/schemas/StaffCreate" }
             }
           }
         },
+        "responses": { "201": { "description": "Staff created" } }
+      }
+    },
+    "/staff/{staffId}/busy-slots": {
+      "get": {
+        "summary": "Get busy slots for staff",
+        "tags": ["Staff"],
+        "parameters": [
+          {
+            "name": "staffId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "date" }
+          }
+        ],
         "responses": {
-          "201": {
-            "description": "Event created successfully",
+          "200": {
+            "description": "Busy slots returned",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EventResponseWithMessage"
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "array",
+                      "items": { "type": "string", "format": "date-time" }
+                    }
+                  }
                 }
               }
             }
           },
-          "400": { "description": "Validation error or event exists on date" }
+          "400": { "description": "Invalid staffId or date" }
         }
       }
     },
-    "/events/{id}": {
+    "/services": {
       "get": {
-        "summary": "Get event by ID",
-        "tags": ["Events"],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": { "type": "string" },
-            "description": "The event ID"
-          }
-        ],
+        "summary": "Get all services",
+        "tags": ["Services"],
         "responses": {
           "200": {
-            "description": "Event object (note: seat availability managed separately via Bookings)",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/EventResponse" }
-              }
-            }
-          },
-          "404": { "description": "Event not found" }
-        }
-      },
-      "put": {
-        "summary": "Update event by ID",
-        "tags": ["Events"],
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": { "type": "string" },
-            "description": "The event ID"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/EventCreate" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Event updated",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/EventResponse" }
-              }
-            }
-          },
-          "404": {
-            "description": "Event not found"
-          }
-        }
-      },
-      "delete": {
-        "summary": "Delete event by ID",
-        "tags": ["Events"],
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": { "type": "string" },
-            "description": "The event ID"
-          }
-        ],
-        "responses": {
-          "204": { "description": "Event deleted successfully" },
-          "404": { "description": "Event not found" }
-        }
-      }
-    },
-    "/events/{id}/bookings": {
-      "get": {
-        "summary": "List bookings (booked seats) for an event",
-        "tags": ["Bookings"],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": { "type": "string" },
-            "description": "The event ID"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of bookings for seats booked in event",
+            "description": "List of services",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "items": { "$ref": "#/components/schemas/Booking" }
+                  "items": { "$ref": "#/components/schemas/Service" }
                 }
               }
             }
-          },
-          "404": { "description": "Event not found" }
+          }
         }
-      }
-    },
-    "/bookings": {
+      },
       "post": {
-        "summary": "Book a ticket for an event",
-        "tags": ["Bookings"],
+        "summary": "Create service",
+        "tags": ["Services"],
         "security": [{ "bearerAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/BookTicketRequest" }
+              "schema": { "$ref": "#/components/schemas/ServiceCreate" }
             }
           }
         },
-        "responses": {
-          "200": {
-            "description": "Ticket booked successfully",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/BookTicketResponse" }
+        "responses": { "201": { "description": "Service created" } }
+      }
+    },
+    "/appointments/availability": {
+      "post": {
+        "summary": "Check availability",
+        "tags": ["Appointments"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckAvailabilityRequest"
               }
             }
-          },
-          "400": {
-            "description": "Booking error (e.g., seat already booked or invalid input)"
-          },
-          "401": { "description": "Unauthorized" }
+          }
+        },
+        "responses": { "200": { "description": "Available slots returned" } }
+      }
+    },
+    "/appointments": {
+      "post": {
+        "summary": "Create appointment",
+        "tags": ["Appointments"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAppointmentRequest"
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Appointment created" } }
+      }
+    },
+    "/appointments/me": {
+      "get": {
+        "summary": "Get user appointments",
+        "tags": ["Appointments"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "List of user's appointments" } }
+      }
+    },
+    "/appointments/{appointmentId}/cancel": {
+      "post": {
+        "summary": "Cancel appointment",
+        "tags": ["Appointments"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "appointmentId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": { "200": { "description": "Appointment cancelled" } }
+      }
+    },
+    "/appointments/{appointmentId}/reschedule": {
+      "post": {
+        "summary": "Reschedule appointment",
+        "tags": ["Appointments"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "appointmentId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RescheduleAppointmentRequest"
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Appointment rescheduled" } }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "UserRegister": {
+        "type": "object",
+        "required": ["name", "email", "password", "phone"],
+        "properties": {
+          "name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string" },
+          "phone": { "type": "string" }
         }
+      },
+      "UserLogin": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string" }
+        }
+      },
+      "RefreshTokenRequest": {
+        "type": "object",
+        "properties": { "refreshToken": { "type": "string" } },
+        "required": ["refreshToken"]
+      },
+      "LogoutRequest": {
+        "type": "object",
+        "properties": { "refreshToken": { "type": "string" } },
+        "required": ["refreshToken"]
+      },
+      "ResetPasswordRequest": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "otp": { "type": "string" },
+          "newPassword": { "type": "string" }
+        },
+        "required": ["email", "otp", "newPassword"]
+      },
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "email": { "type": "string" },
+              "role": { "type": "string" }
+            }
+          }
+        }
+      },
+      "Staff": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "user": { "type": "string" },
+          "services": { "type": "array", "items": { "type": "string" } },
+          "availability": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "dayOfWeek": { "type": "integer" },
+                "startTime": { "type": "string" },
+                "endTime": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "StaffCreate": {
+        "type": "object",
+        "required": ["user"],
+        "properties": {
+          "user": { "type": "string" },
+          "services": { "type": "array", "items": { "type": "string" } },
+          "availability": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "dayOfWeek": { "type": "integer" },
+                "startTime": { "type": "string" },
+                "endTime": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "Service": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "duration": { "type": "number" },
+          "price": { "type": "number" }
+        }
+      },
+      "ServiceCreate": {
+        "type": "object",
+        "required": ["name", "description", "duration", "price"],
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "duration": { "type": "number" },
+          "price": { "type": "number" }
+        }
+      },
+      "CheckAvailabilityRequest": {
+        "type": "object",
+        "required": ["staffId", "serviceId", "date"],
+        "properties": {
+          "staffId": { "type": "string" },
+          "serviceId": { "type": "string" },
+          "date": { "type": "string", "format": "date" }
+        }
+      },
+      "CreateAppointmentRequest": {
+        "type": "object",
+        "required": ["userId", "staffId", "serviceId", "startTime", "endTime"],
+        "properties": {
+          "userId": { "type": "string" },
+          "staffId": { "type": "string" },
+          "serviceId": { "type": "string" },
+          "startTime": { "type": "string", "format": "date-time" },
+          "endTime": { "type": "string", "format": "date-time" }
+        }
+      },
+      "RescheduleAppointmentRequest": {
+        "type": "object",
+        "required": ["startTime", "endTime"],
+        "properties": {
+          "startTime": { "type": "string", "format": "date-time" },
+          "endTime": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
       }
     }
   }
