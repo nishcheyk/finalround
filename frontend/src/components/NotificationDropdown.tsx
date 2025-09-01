@@ -224,7 +224,7 @@ const NotificationDropdown: React.FC = () => {
       notification.expiresAt &&
       isAfter(new Date(), new Date(notification.expiresAt));
     const isMarking = markingAsRead.has(notification._id);
-    const isDeleting = deletingNotification === notification._id;
+
     const { icon } = getNotificationDisplay(notification);
 
     return (
@@ -232,7 +232,7 @@ const NotificationDropdown: React.FC = () => {
         sx={{
           backgroundColor: isRead
             ? "transparent"
-            : alpha(theme.palette.primary.main, 0.05),
+            : alpha(theme.palette.primary.main, 0.1),
           border: isRead
             ? "none"
             : `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
@@ -431,6 +431,12 @@ const NotificationDropdown: React.FC = () => {
           size="large"
           sx={{
             transition: "all 0.2s ease-in-out",
+            mx: 4,
+            "&.MuiIconButton-sizeLarge": {
+              fontSize: 24,
+              minWidth: 18,
+              minHeight: 48,
+            },
             "&:hover": {
               backgroundColor: "rgba(255,255,255,0.1)",
               transform: "scale(1.05)",
@@ -440,21 +446,27 @@ const NotificationDropdown: React.FC = () => {
           <Badge
             badgeContent={unreadCount}
             color="error"
+            max={99}
             sx={{
-              "& .MuiBadge-badge": {
+              "& .MuiBadge-badge-root": {
+                minWidth: 20, // ensures enough width
+                height: 20,
+                px: 0.5, // horizontal padding for 2-3 digits
+                fontSize: "0.75rem",
+                fontWeight: "bold",
                 animation: unreadCount > 0 ? "pulse 2s infinite" : "none",
                 "@keyframes pulse": {
                   "0%": { transform: "scale(1)" },
-                  "50%": { transform: "scale(1.1)" },
+                  "50%": { transform: "scale(1.15)" },
                   "100%": { transform: "scale(1)" },
                 },
               },
             }}
           >
             {unreadCount > 0 ? (
-              <NotificationsIcon />
+              <NotificationsIcon fontSize="inherit" />
             ) : (
-              <NotificationsNoneIcon />
+              <NotificationsNoneIcon fontSize="inherit" />
             )}
           </Badge>
         </IconButton>
