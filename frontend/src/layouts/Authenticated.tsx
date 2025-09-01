@@ -462,7 +462,7 @@ export default function AuthenticatedLayout() {
           )}
 
           {/* Right Section - User Actions */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             {/* Welcome message for larger screens */}
             {!isMobile && user && (
               <Box sx={{ textAlign: "right", mr: 2 }}>

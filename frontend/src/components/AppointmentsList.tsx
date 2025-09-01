@@ -18,6 +18,7 @@ import {
   Skeleton,
   CircularProgress,
 } from "@mui/material";
+import EventBusyIcon from "@mui/icons-material/EventBusy";
 import { motion } from "framer-motion";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -31,11 +32,13 @@ import {
   useGetUserAppointmentsQuery,
   useGetBusySlotsForStaffQuery,
 } from "../services/api";
+import { useNavigate } from "react-router-dom";
 
 export function AppointmentsList() {
   const theme = useTheme();
   const isSmUp = useMediaQuery(theme.breakpoints.up("sm"));
   const isMdUp = useMediaQuery(theme.breakpoints.up("md"));
+  const navigate = useNavigate();
 
   const {
     data: appointmentsData,
@@ -44,7 +47,6 @@ export function AppointmentsList() {
   } = useGetUserAppointmentsQuery();
   const [cancelAppointment] = useCancelAppointmentMutation();
   const [rescheduleAppointment] = useRescheduleAppointmentMutation();
-
 
   const [rescheduleId, setRescheduleId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -57,7 +59,8 @@ export function AppointmentsList() {
     severity: "success" as "success" | "error" | "warning" | "info",
   });
 
-  const { data: servicesData, isLoading: servicesLoading } = useGetServicesQuery();
+  const { data: servicesData, isLoading: servicesLoading } =
+    useGetServicesQuery();
   const { data: staffData, isLoading: staffLoading } = useGetStaffQuery();
   console.log("Staff data:", staffData);
 
@@ -66,36 +69,31 @@ export function AppointmentsList() {
     return (staffData as any)?.data || staffData || [];
   }, [staffData]);
 
-
   const staffTimeZone: string = "Asia/Kolkata";
-
 
   const dateParam = useMemo(() => {
     if (!selectedDate) return "";
 
     const year = selectedDate.getFullYear();
-    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
+    const day = String(selectedDate.getDate()).padStart(2, "0");
 
     return `${year}-${month}-${day}`;
   }, [selectedDate]);
 
-
   const {
     data: busySlotsData,
     isLoading: busySlotsLoading,
-    refetch: refetchBusySlots
+    refetch: refetchBusySlots,
   } = useGetBusySlotsForStaffQuery(
     { staffId: selectedStaff, date: dateParam },
     { skip: !selectedStaff || !selectedDate || !dateParam }
   );
 
-
   const servicesList = useMemo(() => {
     if (!servicesData) return [];
     return (servicesData as any)?.data || servicesData || [];
   }, [servicesData]);
-
 
   const slotOptions = useMemo(() => {
     if (!selectedDate || !selectedService || !servicesList.length) return [];
@@ -104,10 +102,8 @@ export function AppointmentsList() {
     if (!service) return [];
 
     const duration: number = service.duration; // minutes
-    const startHour = 9;  // opening hour in staff timezone
-    const endHour = 22;   // closing hour in staff timezone
-
-
+    const startHour = 9; // opening hour in staff timezone
+    const endHour = 22; // closing hour in staff timezone
 
     const busySlots: string[] = (() => {
       if (!busySlotsData) return [];
@@ -133,7 +129,11 @@ export function AppointmentsList() {
     const slots: Array<{ value: string; label: string }> = [];
 
     // Generate slots for business hours
-    for (let mins = startHour * 60; mins + duration <= endHour * 60; mins += duration) {
+    for (
+      let mins = startHour * 60;
+      mins + duration <= endHour * 60;
+      mins += duration
+    ) {
       const slotInStaffTz = dayStartInStaffTz.plus({ minutes: mins });
       const slotUtc = slotInStaffTz.toUTC();
       const slotUtcISO = slotUtc.toISO();
@@ -143,7 +143,7 @@ export function AppointmentsList() {
         staffTz: slotInStaffTz.toISO(),
         utc: slotUtcISO,
         valid: slotUtc.isValid,
-        isBusy: busySet.has(slotUtcISO || "")
+        isBusy: busySet.has(slotUtcISO || ""),
       });
 
       if (!slotUtcISO || !slotUtc.isValid) continue;
@@ -159,7 +159,13 @@ export function AppointmentsList() {
 
     console.log("Generated available slots:", slots.length);
     return slots;
-  }, [busySlotsData, selectedDate, selectedService, servicesList, staffTimeZone]);
+  }, [
+    busySlotsData,
+    selectedDate,
+    selectedService,
+    servicesList,
+    staffTimeZone,
+  ]);
 
   const handleCancel = async (appointmentId: string) => {
     try {
@@ -220,7 +226,6 @@ export function AppointmentsList() {
       if (selectedStaff && dateParam) {
         refetchBusySlots();
       }
-
     } catch (error: any) {
       console.error("Reschedule error:", error);
       setSnackbar({
@@ -252,7 +257,9 @@ export function AppointmentsList() {
 
   const formatAppointmentTime = (startTime: string | Date) => {
     const dt = DateTime.fromJSDate(new Date(startTime));
-    return dt.setZone(staffTimeZone).toFormat("EEEE, MMMM dd, yyyy 'at' hh:mm a");
+    return dt
+      .setZone(staffTimeZone)
+      .toFormat("EEEE, MMMM dd, yyyy 'at' hh:mm a");
   };
 
   return (
@@ -268,8 +275,8 @@ export function AppointmentsList() {
             gridTemplateColumns: isMdUp
               ? "1fr 1fr 1fr"
               : isSmUp
-              ? "1fr 1fr"
-              : "1fr",
+                ? "1fr 1fr"
+                : "1fr",
             gap: 3,
             mt: 2,
           }}
@@ -292,8 +299,8 @@ export function AppointmentsList() {
             gridTemplateColumns: isMdUp
               ? "1fr 1fr 1fr"
               : isSmUp
-              ? "1fr 1fr"
-              : "1fr",
+                ? "1fr 1fr"
+                : "1fr",
             gap: 3,
             mt: 2,
           }}
@@ -331,10 +338,10 @@ export function AppointmentsList() {
                     appt.status === "scheduled"
                       ? "primary"
                       : appt.status === "completed"
-                      ? "success.main"
-                      : appt.status === "cancelled"
-                      ? "error.main"
-                      : "warning.main"
+                        ? "success.main"
+                        : appt.status === "cancelled"
+                          ? "error.main"
+                          : "warning.main"
                   }
                   fontWeight="bold"
                   sx={{ mt: "auto" }}
@@ -366,9 +373,45 @@ export function AppointmentsList() {
           ))}
         </Box>
       ) : (
-        <Typography>No appointments found</Typography>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              p: 4,
+              borderRadius: 3,
+              boxShadow: 2,
+              bgcolor: "background.paper",
+              mt: 4,
+            }}
+          >
+            <EventBusyIcon
+              sx={{ fontSize: 60, color: "text.secondary", mb: 2 }}
+            />
+            <Typography variant="h6" gutterBottom>
+              No appointments found
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              You don’t have any scheduled appointments yet. Book one to get
+              started!
+            </Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => navigate("/")}
+            >
+              Book Appointment
+            </Button>
+          </Box>
+        </motion.div>
       )}
-
 
       <Dialog
         open={Boolean(rescheduleId)}
@@ -379,7 +422,6 @@ export function AppointmentsList() {
         <DialogTitle>Reschedule Appointment</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <Box>
-
             <FormControl sx={{ minWidth: 220, mr: 2, mb: 2 }}>
               {servicesLoading ? (
                 <Skeleton variant="rectangular" height={56} />
@@ -404,7 +446,6 @@ export function AppointmentsList() {
                 </>
               )}
             </FormControl>
-
 
             <FormControl sx={{ minWidth: 220, mb: 2 }}>
               {staffLoading ? (
@@ -431,7 +472,6 @@ export function AppointmentsList() {
               )}
             </FormControl>
 
-
             {servicesLoading || staffLoading ? (
               <Skeleton variant="rectangular" height={280} sx={{ mb: 3 }} />
             ) : (
@@ -455,14 +495,14 @@ export function AppointmentsList() {
               </Box>
             )}
 
-
             {busySlotsLoading && selectedDate && selectedStaff && (
               <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
                 <CircularProgress size={24} />
-                <Typography sx={{ ml: 2 }}>Loading available times...</Typography>
+                <Typography sx={{ ml: 2 }}>
+                  Loading available times...
+                </Typography>
               </Box>
             )}
-
 
             {slotOptions.length > 0 && (
               <motion.div
@@ -486,38 +526,55 @@ export function AppointmentsList() {
                   </Select>
                 </FormControl>
 
-          
                 {selectedSlot && (
                   <Box sx={{ textAlign: "center", mt: 2 }}>
                     <Typography variant="body1" sx={{ mb: 2 }}>
                       New Appointment Details:
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mb: 1 }}
+                    >
                       Date: {getSelectedDateDisplay()}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mb: 1 }}
+                    >
                       Time: {getConfirmationTime(selectedSlot)}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                      Service: {servicesList.find(s => s._id === selectedService)?.name}
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mb: 3 }}
+                    >
+                      Service:{" "}
+                      {
+                        servicesList.find((s) => s._id === selectedService)
+                          ?.name
+                      }
                     </Typography>
                   </Box>
                 )}
               </motion.div>
             )}
 
-
             {slotOptions.length === 0 &&
-             selectedDate &&
-             selectedService &&
-             selectedStaff &&
-             !busySlotsLoading && (
-              <Typography color="text.secondary" sx={{ mt: 3, textAlign: "center" }}>
-                No available slots for the selected date, staff, and service.
-                <br />
-                Please select another date or staff member.
-              </Typography>
-            )}
+              selectedDate &&
+              selectedService &&
+              selectedStaff &&
+              !busySlotsLoading && (
+                <Typography
+                  color="text.secondary"
+                  sx={{ mt: 3, textAlign: "center" }}
+                >
+                  No available slots for the selected date, staff, and service.
+                  <br />
+                  Please select another date or staff member.
+                </Typography>
+              )}
           </Box>
         </DialogContent>
 

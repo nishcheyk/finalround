@@ -434,7 +434,7 @@ const NotificationDropdown: React.FC = () => {
             mx: 4,
             "&.MuiIconButton-sizeLarge": {
               fontSize: 24,
-              minWidth: 18,
+              minWidth: 10,
               minHeight: 48,
             },
             "&:hover": {
