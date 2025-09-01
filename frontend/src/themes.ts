@@ -60,6 +60,15 @@ const getTheme = (mode: "light" | "dark" | "system") => {
         disabled: grey[400],
         disabledBackground: isLight ? grey[50] : grey[900],
       },
+
+      // gradient: {
+      //   main: isLight
+      //     ? "linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)"
+      //     : "linear-gradient(135deg, #1f1c2c 0%, #928DAB 100%)",
+      //   subtle: isLight
+      //     ? "linear-gradient(135deg, #42a5f5 0%, #90caf9 100%)"
+      //     : "linear-gradient(135deg, #434343 0%, #000000 100%)",
+      // },
     },
     typography: {
       fontFamily: "'Roboto', 'Helvetica', 'Arial', sans-serif",
