@@ -1,92 +1,147 @@
-/* This code snippet is a TypeScript React component that defines two components: `FeatureCard` and
-`AdminLandingPage`. */
 import React from "react";
-import { Box, Paper, Typography, CardActionArea } from "@mui/material";
-import Grid from "@mui/material/Grid2"; // This is the new Grid2 component
+import { Card, Col, Row, Typography, Badge } from "antd";
+import {
+  NotificationOutlined,
+  TeamOutlined,
+  AppstoreOutlined,
+  AreaChartOutlined,
+  CalendarOutlined,
+} from "@ant-design/icons";
+import { motion } from "framer-motion";
 
-interface FeatureCardProps {
-  title: string;
-  description: string;
-  onClick: () => void;
-}
+const { Title, Text } = Typography;
 
-/* The `const FeatureCard` is a functional component in TypeScript React that takes in props of type
-`FeatureCardProps`. It destructures the `title`, `description`, and `onClick` props from the
-`FeatureCardProps` object. */
-const FeatureCard: React.FC<FeatureCardProps> = ({
-  title,
-  description,
-  onClick,
-}) => (
-  <Grid size={{ xs: 12, md: 4 }}>
-    <Paper elevation={3}>
-      <CardActionArea onClick={onClick} sx={{ p: 3 }}>
-        <Typography variant="h6">{title}</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          {description}
-        </Typography>
-      </CardActionArea>
-    </Paper>
-  </Grid>
-);
+const cards = [
+  {
+    key: "notifications",
+    title: "Notifications",
+    description: "Manage notifications for users.",
+    icon: <NotificationOutlined style={{ fontSize: 36, color: "#1890ff" }} />,
+    span: 12,
+  },
+  {
+    key: "user-management",
+    title: "User Management",
+    description: "Manage users, roles, and permissions.",
+    icon: <TeamOutlined style={{ fontSize: 36, color: "#1890ff" }} />,
+    span: 12,
+  },
+  {
+    key: "services",
+    title: "Manage Services",
+    description: "Add, edit, or remove services.",
+    icon: <AppstoreOutlined style={{ fontSize: 36, color: "#1890ff" }} />,
+    span: 24,
+  },
+  {
+    key: "stats",
+    title: "View Stats",
+    description: "View platform statistics and analytics.",
+    icon: <AreaChartOutlined style={{ fontSize: 36, color: "#1890ff" }} />,
+    span: 12,
+  },
+  {
+    key: "appointments",
+    title: "Manage Appointments",
+    description: "View and manage all appointments.",
+    icon: <CalendarOutlined style={{ fontSize: 36, color: "#1890ff" }} />,
+    span: 12,
+  },
+];
 
-/* The `interface AdminLandingPageProps` is defining the prop types expected by the `AdminLandingPage`
-component in TypeScript React. Each property in this interface represents a function that takes no
-arguments and returns `void`. Here's a breakdown of each property: */
-interface AdminLandingPageProps {
+const AdminLandingPageFull: React.FC<{
   onSelectNotifications: () => void;
   onSelectUsers: () => void;
   onSelectStats?: () => void;
   onSelectAppointments?: () => void;
   onSelectServices?: () => void;
-}
-
-/* The `const AdminLandingPage` is a functional component in TypeScript React that takes in props of
-type `AdminLandingPageProps`. It destructures the props `onSelectNotifications`, `onSelectUsers`,
-`onSelectStats`, `onSelectAppointments`, and `onSelectServices` from the `AdminLandingPageProps`
-object. */
-const AdminLandingPage: React.FC<AdminLandingPageProps> = ({
+}> = ({
   onSelectNotifications,
   onSelectUsers,
   onSelectStats,
   onSelectAppointments,
   onSelectServices,
 }) => {
+  const getOnClickHandler = (key: string) => {
+    switch (key) {
+      case "notifications":
+        return onSelectNotifications;
+      case "user-management":
+        return onSelectUsers;
+      case "services":
+        return onSelectServices;
+      case "stats":
+        return onSelectStats;
+      case "appointments":
+        return onSelectAppointments;
+      default:
+        return () => {};
+    }
+  };
+
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
+    <div
+      style={{
+        maxWidth: 1200,
+        margin: "0 auto",
+        marginTop: 90,
+        padding: 24,
+        backgroundColor: "#f5f7fa",
+        borderRadius: 8,
+      }}
+    >
+      <Title level={2} style={{ marginBottom: 32, color: "#0958d9" }}>
         Admin Dashboard
-      </Typography>
-      <Grid container spacing={3}>
-        <FeatureCard
-          title="Notifications"
-          description="Manage notifications for users."
-          onClick={onSelectNotifications}
-        />
-        <FeatureCard
-          title="User Management"
-          description="Manage users, roles, and permissions."
-          onClick={onSelectUsers}
-        />
-        <FeatureCard
-          title="Manage Services"
-          description="Add, edit, or remove services."
-          onClick={onSelectServices || (() => {})}
-        />
-        <FeatureCard
-          title="View Stats"
-          description="View platform statistics and analytics."
-          onClick={onSelectStats || (() => {})}
-        />
-        <FeatureCard
-          title="Manage Appointments"
-          description="View and manage all appointments."
-          onClick={onSelectAppointments || (() => {})}
-        />
-        {/* Add more feature cards as needed */}
-      </Grid>
-    </Box>
+      </Title>
+      <Row gutter={[24, 24]}>
+        {cards.map(({ key, title, description, icon, span, badgeCount }) => (
+          <Col key={key} xs={24} sm={span}>
+            <motion.div
+              whileHover={{
+                scale: 1.03,
+                boxShadow: "0 12px 24px rgba(0,0,0,0.16)",
+              }}
+              whileTap={{ scale: 0.98 }}
+              style={{ cursor: "pointer" }}
+              onClick={getOnClickHandler(key)}
+            >
+              <Card
+                bordered={false}
+                style={{
+                  height: "100%",
+                  borderRadius: 12,
+                  background: "linear-gradient(135deg, #f9fbff, #e6f0ff)",
+                  transition: "box-shadow 0.3s ease",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    marginBottom: 16,
+                  }}
+                >
+                  {badgeCount ? (
+                    <Badge count={badgeCount} offset={[10, 0]}>
+                      {icon}
+                    </Badge>
+                  ) : (
+                    icon
+                  )}
+                  <h3 style={{ marginLeft: 16, color: "#0a3d62" }}>{title}</h3>
+                </div>
+                <Text
+                  style={{ fontSize: 15, color: "#3c4858", lineHeight: 1.5 }}
+                >
+                  {description}
+                </Text>
+              </Card>
+            </motion.div>
+          </Col>
+        ))}
+      </Row>
+    </div>
   );
 };
 
-export default AdminLandingPage;
+export default AdminLandingPageFull;

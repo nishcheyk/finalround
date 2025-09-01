@@ -17,6 +17,7 @@ import {
   TextField,
   IconButton,
   CircularProgress,
+  Tooltip,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -32,6 +33,7 @@ const AdminServices: React.FC = () => {
   const [createService] = useCreateServiceMutation();
   const [updateService] = useUpdateServiceMutation();
   const [deleteService] = useDeleteServiceMutation();
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editService, setEditService] = useState<any>(null);
   const [form, setForm] = useState({
@@ -41,6 +43,11 @@ const AdminServices: React.FC = () => {
     price: 0,
   });
   const [loading, setLoading] = useState(false);
+  const [formErrors, setFormErrors] = useState({
+    name: "",
+    duration: "",
+    price: "",
+  });
 
   const handleOpen = (service?: any) => {
     if (service) {
@@ -55,30 +62,46 @@ const AdminServices: React.FC = () => {
       setEditService(null);
       setForm({ name: "", description: "", duration: 30, price: 0 });
     }
+    setFormErrors({ name: "", duration: "", price: "" });
     setDialogOpen(true);
   };
 
   const handleClose = () => {
     setDialogOpen(false);
     setEditService(null);
+    setFormErrors({ name: "", duration: "", price: "" });
   };
 
- /**
-  * The handleChange function updates the form state with the value of the input field that triggered
-  * the change event.
-  * @param e - The parameter `e` in the `handleChange` function is of type
-  * `React.ChangeEvent<HTMLInputElement>`. This means it is an event object that is triggered when the
-  * value of an input element changes in a React component.
-  */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    // Validate fields inline
+    let error = "";
+    if (name === "name" && !value.trim()) {
+      error = "Name is required";
+    }
+    if (name === "duration" && (Number(value) <= 0 || isNaN(Number(value)))) {
+      error = "Duration must be a positive number";
+    }
+    if (name === "price" && (Number(value) < 0 || isNaN(Number(value)))) {
+      error = "Price must be zero or positive number";
+    }
+
+    setFormErrors((prev) => ({ ...prev, [name]: error }));
+    setForm((prev) => ({
+      ...prev,
+      [name]: name === "name" ? value : Number(value),
+    }));
   };
 
- /**
-  * The `handleSubmit` function in TypeScript React handles the submission of a form, either updating
-  * or creating a service, and then refetches data and closes a modal.
-  */
+  const isFormValid = () =>
+    !!form.name.trim() &&
+    !formErrors.name &&
+    !formErrors.duration &&
+    !formErrors.price;
+
   const handleSubmit = async () => {
+    if (!isFormValid()) return;
     setLoading(true);
     try {
       if (editService) {
@@ -88,28 +111,27 @@ const AdminServices: React.FC = () => {
       }
       refetch();
       handleClose();
+    } catch (error) {
+      console.error("Error saving service:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  /**
-   * The function `handleDelete` asynchronously deletes a resource by its ID, triggers a refetch, and
-   * manages loading state.
-   * @param {string} id - The `id` parameter in the `handleDelete` function is a string that represents
-   * the unique identifier of the item that needs to be deleted.
-   */
   const handleDelete = async (id: string) => {
     setLoading(true);
-    await deleteService(id);
-    refetch();
-    setLoading(false);
+    try {
+      await deleteService(id);
+      refetch();
+    } catch (error) {
+      console.error("Error deleting service:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
- /* This portion of code in the `AdminServices` component is responsible for rendering the UI elements
- related to managing services. Here's a breakdown of what it does: */
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ px: 4, p: 10, mx: "auto" }}>
       <Typography variant="h4" gutterBottom>
         Manage Services
       </Typography>
@@ -117,91 +139,135 @@ const AdminServices: React.FC = () => {
         Add Service
       </Button>
       {isLoading ? (
-        <CircularProgress />
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
+          <CircularProgress />
+        </Box>
       ) : (
         <TableContainer component={Paper}>
-          <Table>
+          <Table aria-label="Service management table">
             <TableHead>
               <TableRow>
                 <TableCell>Name</TableCell>
                 <TableCell>Description</TableCell>
                 <TableCell>Duration (min)</TableCell>
                 <TableCell>Price</TableCell>
-                <TableCell>Actions</TableCell>
+                <TableCell align="center">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {data?.data?.length === 0 && (
+              {data?.data?.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} align="center">
                     No services found.
                   </TableCell>
                 </TableRow>
+              ) : (
+                data?.data?.map((service: any) => (
+                  <TableRow key={service._id} hover>
+                    <TableCell>{service.name}</TableCell>
+                    <TableCell>{service.description}</TableCell>
+                    <TableCell>{service.duration}</TableCell>
+                    <TableCell>${service.price.toFixed(2)}</TableCell>
+                    <TableCell align="center">
+                      <Tooltip title="Edit Service">
+                        <IconButton
+                          onClick={() => handleOpen(service)}
+                          aria-label={`Edit ${service.name}`}
+                          size="small"
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Delete Service">
+                        <IconButton
+                          onClick={() => handleDelete(service._id)}
+                          aria-label={`Delete ${service.name}`}
+                          color="error"
+                          size="small"
+                          disabled={loading}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                ))
               )}
-              {data?.data?.map((service: any) => (
-                <TableRow key={service._id}>
-                  <TableCell>{service.name}</TableCell>
-                  <TableCell>{service.description}</TableCell>
-                  <TableCell>{service.duration}</TableCell>
-                  <TableCell>{service.price}</TableCell>
-                  <TableCell>
-                    <IconButton onClick={() => handleOpen(service)}>
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton onClick={() => handleDelete(service._id)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
             </TableBody>
           </Table>
         </TableContainer>
       )}
-      <Dialog open={dialogOpen} onClose={handleClose}>
+
+      <Dialog open={dialogOpen} onClose={handleClose} fullWidth maxWidth="sm">
         <DialogTitle>
           {editService ? "Edit Service" : "Add Service"}
         </DialogTitle>
-        <DialogContent>
+        <DialogContent dividers>
           <TextField
-            margin="dense"
+            margin="normal"
             label="Name"
             name="name"
             value={form.name}
             onChange={handleChange}
             fullWidth
+            required
+            error={!!formErrors.name}
+            helperText={formErrors.name}
+            autoFocus
           />
           <TextField
-            margin="dense"
+            margin="normal"
             label="Description"
             name="description"
             value={form.description}
             onChange={handleChange}
             fullWidth
+            multiline
+            rows={3}
           />
           <TextField
-            margin="dense"
+            margin="normal"
             label="Duration (minutes)"
             name="duration"
             type="number"
             value={form.duration}
             onChange={handleChange}
             fullWidth
+            required
+            error={!!formErrors.duration}
+            helperText={formErrors.duration}
+            inputProps={{ min: 1 }}
           />
           <TextField
-            margin="dense"
+            margin="normal"
             label="Price"
             name="price"
             type="number"
             value={form.price}
             onChange={handleChange}
             fullWidth
+            required
+            error={!!formErrors.price}
+            helperText={formErrors.price}
+            inputProps={{ min: 0, step: 0.01 }}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={loading} variant="contained">
-            {editService ? "Update" : "Create"}
+          <Button onClick={handleClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            disabled={loading || !isFormValid()}
+          >
+            {loading ? (
+              <CircularProgress size={24} />
+            ) : editService ? (
+              "Update"
+            ) : (
+              "Create"
+            )}
           </Button>
         </DialogActions>
       </Dialog>
