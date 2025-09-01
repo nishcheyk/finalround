@@ -20,6 +20,8 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Badge,
+  Chip,
 } from "@mui/material";
 import {
   Link as RouterLink,
@@ -28,6 +30,7 @@ import {
   Navigate,
   Outlet,
   useNavigate,
+  useLocation,
 } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
 import AccountCircle from "@mui/icons-material/AccountCircle";
@@ -35,6 +38,12 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import PersonIcon from "@mui/icons-material/Person";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import BookOnlineIcon from "@mui/icons-material/BookOnline";
+import LogoutIcon from "@mui/icons-material/Logout";
+import SupervisorAccountIcon from "@mui/icons-material/SupervisorAccount";
+import CloseIcon from "@mui/icons-material/Close";
 
 import { useLogoutMutation } from "../services/api";
 import { useAppSelector, useAppDispatch } from "../store/hooks";
@@ -42,163 +51,299 @@ import { resetCredentials } from "../store/reducers/authReducer";
 import { ColorThemeSwitcher } from "../components/ThemeSelector";
 import NotificationDropdown from "../components/NotificationDropdown";
 
+// Navigation items configuration
+const navigationItems = [
+  { path: "/", label: "Book Appointment", icon: BookOnlineIcon },
+  { path: "/my-appointments", label: "My Schedule", icon: CalendarTodayIcon },
+];
+
+const adminNavigationItems = [
+  { path: "/admin", label: "Admin Panel", icon: AdminPanelSettingsIcon },
+  {
+    path: "/admin/notifications",
+    label: "Notifications",
+    icon: NotificationsIcon,
+  },
+  { path: "/admin/users", label: "Manage Users", icon: SupervisorAccountIcon },
+];
+
 /**
- * The `AuthenticatedLayout` function is a React component that provides a layout for authenticated
- * users, including a navigation bar with various links and user profile options.
+ * Enhanced AuthenticatedLayout component with improved UI/UX and bug fixes
  */
 export default function AuthenticatedLayout() {
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const [logoutUser, { isLoading }] = useLogoutMutation();
+  const location = useLocation();
+  const [logoutUser, { isLoading: isLoggingOut }] = useLogoutMutation();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const toggleDrawer = (open: boolean) => () => setDrawerOpen(open);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
 
-/* The above code snippet is a TypeScript React function named `handleLogout` that is using the
-`useCallback` hook. */
+  // Redirect if not authenticated
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Handle drawer toggle
+  const toggleDrawer = useCallback(
+    (open: boolean) => () => {
+      setDrawerOpen(open);
+    },
+    []
+  );
+
+  // Handle logout with error handling
   const handleLogout = useCallback(async () => {
     handleMenuClose();
     setDrawerOpen(false);
+
     try {
       await logoutUser().unwrap();
-      dispatch(resetCredentials());
-      navigate("/login", { replace: true });
-    } catch (e) {
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
       dispatch(resetCredentials());
       navigate("/login", { replace: true });
     }
   }, [logoutUser, dispatch, navigate]);
 
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-
-  const menuId = "primary-account-menu";
-
-/**
- * The function `handleMenuClose` sets the anchor element to null.
- */
-  function handleMenuClose() {
-    setAnchorEl(null);
-  }
-
- /**
-  * The function `handleMenuOpen` sets the anchor element for a menu based on the current event target.
-  * @param event - The `event` parameter in the `handleMenuOpen` function is a React MouseEvent of type
-  * HTMLElement. It represents the event that triggered the menu to open, such as a mouse click or
-  * touch event.
-  */
-  function handleMenuOpen(event: React.MouseEvent<HTMLElement>) {
+  // Handle menu operations
+  const handleMenuOpen = useCallback((event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
-  }
+  }, []);
 
-  // Drawer content for mobile
-  const drawerList = (
-    <Box
-      role="presentation"
-      onClick={toggleDrawer(false)}
-      onKeyDown={toggleDrawer(false)}
-      sx={{ width: 250 }}
+  const handleMenuClose = useCallback(() => {
+    setAnchorEl(null);
+  }, []);
+
+  // Check if current path is active
+  const isPathActive = useCallback(
+    (path: string) => {
+      if (path === "/") {
+        return location.pathname === "/";
+      }
+      return location.pathname.startsWith(path);
+    },
+    [location.pathname]
+  );
+
+  // Get user initials for avatar
+  const getUserInitials = useCallback(() => {
+    if (!user?.name) return "U";
+    const names = user.name.split(" ");
+    if (names.length === 1) return names[0].charAt(0).toUpperCase();
+    return (
+      names[0].charAt(0) + names[names.length - 1].charAt(0)
+    ).toUpperCase();
+  }, [user?.name]);
+
+  // Navigation button component
+  const NavigationButton = ({
+    path,
+    label,
+    isActive,
+  }: {
+    path: string;
+    label: string;
+    isActive: boolean;
+  }) => (
+    <Button
+      component={NavLink}
+      to={path}
+      color="inherit"
+      variant={isActive ? "contained" : "outlined"}
+      size={isTablet ? "medium" : "large"}
+      sx={{
+        fontWeight: 600,
+        letterSpacing: 0.5,
+        textTransform: "none",
+        backgroundColor: isActive ? "secondary.main" : "transparent",
+        color: isActive ? "white" : "inherit",
+        borderColor: isActive ? "secondary.main" : "rgba(255,255,255,0.3)",
+        "&:hover": {
+          backgroundColor: isActive
+            ? "secondary.dark"
+            : "rgba(255,255,255,0.1)",
+          borderColor: isActive ? "secondary.dark" : "rgba(255,255,255,0.5)",
+          transform: "translateY(-1px)",
+        },
+        transition: "all 0.2s ease-in-out",
+        whiteSpace: "nowrap",
+        minWidth: isTablet ? 100 : 120,
+        borderRadius: 2,
+        px: isTablet ? 2 : 3,
+      }}
     >
-      <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
-        <Box display="flex" alignItems="center" gap={2}>
-          <Avatar sx={{ bgcolor: "primary.main" }}>
-            {user?.name?.charAt(0)?.toUpperCase() || "U"}
+      {label}
+    </Button>
+  );
+
+  // Mobile drawer content
+  const DrawerContent = () => (
+    <Box sx={{ width: 280, height: "100%" }}>
+      {/* Drawer Header */}
+      <Box
+        sx={{
+          p: 3,
+          borderBottom: 1,
+          borderColor: "divider",
+          background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+          color: "white",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            mb: 2,
+          }}
+        >
+          <Typography variant="h6" fontWeight="bold">
+            75 WAYS
+          </Typography>
+          <IconButton
+            onClick={toggleDrawer(false)}
+            sx={{ color: "white" }}
+            size="small"
+          >
+            <CloseIcon />
+          </IconButton>
+        </Box>
+
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Avatar
+            sx={{ bgcolor: "rgba(255,255,255,0.2)", width: 48, height: 48 }}
+          >
+            {getUserInitials()}
           </Avatar>
-          <Box>
-            <Typography variant="subtitle1" fontWeight="bold">
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="subtitle1" fontWeight="bold" noWrap>
               {user?.name || "User"}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ opacity: 0.8 }} noWrap>
               {user?.email}
             </Typography>
             {user?.isAdmin && (
-              <Button
-                color="primary"
-                variant="outlined"
+              <Chip
+                label="Admin"
                 size="small"
-                sx={{ mt: 1 }}
-              >
-                Admin
-              </Button>
+                sx={{
+                  mt: 0.5,
+                  bgcolor: "rgba(255,255,255,0.2)",
+                  color: "white",
+                  fontSize: "0.7rem",
+                }}
+              />
             )}
           </Box>
         </Box>
       </Box>
 
-      <List>
-        <ListItem disablePadding>
-          <ListItemButton component={RouterLink} to="/">
-            <ListItemIcon>
-              <SettingsIcon />
-            </ListItemIcon>
-            <ListItemText primary="Dashboard" />
-          </ListItemButton>
-        </ListItem>
+      {/* Navigation Items */}
+      <List sx={{ pt: 2 }}>
+        {navigationItems.map(({ path, label, icon: Icon }) => {
+          const isActive = isPathActive(path);
+          return (
+            <ListItem key={path} disablePadding sx={{ px: 1 }}>
+              <ListItemButton
+                component={RouterLink}
+                to={path}
+                selected={isActive}
+                sx={{
+                  borderRadius: 2,
+                  mx: 1,
+                  "&.Mui-selected": {
+                    backgroundColor: theme.palette.primary.light,
+                    color: theme.palette.primary.contrastText,
+                    "&:hover": {
+                      backgroundColor: theme.palette.primary.main,
+                    },
+                  },
+                  "&:hover": {
+                    backgroundColor: theme.palette.action.hover,
+                  },
+                }}
+              >
+                <ListItemIcon
+                  sx={{ color: isActive ? "inherit" : "text.secondary" }}
+                >
+                  <Icon />
+                </ListItemIcon>
+                <ListItemText
+                  primary={label}
+                  primaryTypographyProps={{
+                    fontWeight: isActive ? 600 : 400,
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
+          );
+        })}
 
-        <ListItem disablePadding>
-          <ListItemButton component={RouterLink} to="/book">
-            <ListItemIcon>
-              <PersonIcon />
-            </ListItemIcon>
-            <ListItemText primary="Booking" />
-          </ListItemButton>
-        </ListItem>
-
-        <ListItem disablePadding>
-          <ListItemButton component={RouterLink} to="/my-appointments">
-            <ListItemIcon>
-              <PersonIcon />
-            </ListItemIcon>
-            <ListItemText primary="My Schedule" />
-          </ListItemButton>
-        </ListItem>
-
-        <ListItem disablePadding>
-          <ListItemButton component={RouterLink} to="/profile">
-            <ListItemIcon>
-              <PersonIcon />
-            </ListItemIcon>
-            <ListItemText primary="Profile" />
-          </ListItemButton>
-        </ListItem>
-
+        {/* Admin Section */}
         {user?.isAdmin && (
           <>
-            <Divider />
-            <ListItem disablePadding>
-              <ListItemButton component={RouterLink} to="/admin">
-                <ListItemIcon>
-                  <AdminPanelSettingsIcon />
-                </ListItemIcon>
-                <ListItemText primary="Admin Panel" />
-              </ListItemButton>
+            <Divider sx={{ my: 2, mx: 2 }} />
+            <ListItem sx={{ px: 2 }}>
+              <Typography
+                variant="overline"
+                color="text.secondary"
+                fontWeight="bold"
+              >
+                Administration
+              </Typography>
             </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton component={RouterLink} to="/admin/notifications">
-                <ListItemIcon>
-                  <NotificationsIcon />
-                </ListItemIcon>
-                <ListItemText primary="Admin Notifications" />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton component={RouterLink} to="/admin/users">
-                <ListItemIcon>
-                  <PersonIcon />
-                </ListItemIcon>
-                <ListItemText primary="Admin Users" />
-              </ListItemButton>
-            </ListItem>
+            {adminNavigationItems.map(({ path, label, icon: Icon }) => {
+              const isActive = isPathActive(path);
+              return (
+                <ListItem key={path} disablePadding sx={{ px: 1 }}>
+                  <ListItemButton
+                    component={RouterLink}
+                    to={path}
+                    selected={isActive}
+                    sx={{
+                      borderRadius: 2,
+                      mx: 1,
+                      "&.Mui-selected": {
+                        backgroundColor: theme.palette.secondary.light,
+                        color: theme.palette.secondary.contrastText,
+                        "&:hover": {
+                          backgroundColor: theme.palette.secondary.main,
+                        },
+                      },
+                    }}
+                  >
+                    <ListItemIcon
+                      sx={{ color: isActive ? "inherit" : "text.secondary" }}
+                    >
+                      <Icon />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={label}
+                      primaryTypographyProps={{
+                        fontWeight: isActive ? 600 : 400,
+                      }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              );
+            })}
           </>
         )}
 
-        <Divider />
-
-        <ListItem disablePadding>
-          <ListItemButton component={RouterLink} to="/settings">
+        {/* User Actions */}
+        <Divider sx={{ my: 2, mx: 2 }} />
+        <ListItem disablePadding sx={{ px: 1 }}>
+          <ListItemButton
+            component={RouterLink}
+            to="/settings"
+            sx={{ borderRadius: 2, mx: 1 }}
+          >
             <ListItemIcon>
               <SettingsIcon />
             </ListItemIcon>
@@ -206,254 +351,290 @@ export default function AuthenticatedLayout() {
           </ListItemButton>
         </ListItem>
 
-        <ListItem disablePadding>
-          <ListItemButton onClick={handleLogout} disabled={isLoading}>
-            {isLoading ? (
-              <CircularProgress size={20} />
-            ) : (
-              <>
-                <AccountCircle />
-                <ListItemText primary="Logout" />
-              </>
-            )}
+        <ListItem disablePadding sx={{ px: 1 }}>
+          <ListItemButton
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            sx={{
+              borderRadius: 2,
+              mx: 1,
+              color: "error.main",
+              "&:hover": {
+                backgroundColor: "error.light",
+                color: "error.contrastText",
+              },
+            }}
+          >
+            <ListItemIcon sx={{ color: "inherit" }}>
+              {isLoggingOut ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                <LogoutIcon />
+              )}
+            </ListItemIcon>
+            <ListItemText primary="Logout" />
           </ListItemButton>
         </ListItem>
       </List>
     </Box>
   );
 
-/* The above code is a TypeScript React component that represents a responsive navigation bar layout
-for a web application. Here is a breakdown of what the code is doing: */
   return (
     <>
-      <AppBar position="static" color="primary">
+      {/* App Bar */}
+      <AppBar
+        position="static"
+        elevation={0}
+        sx={{
+          background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+          borderBottom: `1px solid ${theme.palette.divider}`,
+        }}
+      >
         <Toolbar
           sx={{
             justifyContent: "space-between",
-            minHeight: { xs: 80, sm: 150, md: 130 }, // responsive heights for different breakpoints
-            px: 5,
+            minHeight: { xs: 70, sm: 80, md: 90 },
+            px: { xs: 2, sm: 3, md: 4 },
+            gap: 2,
           }}
         >
-          {/* Left side hamburger menu on mobile */}
-          {isMobile ? (
-            <IconButton
-              color="inherit"
-              edge="start"
-              onClick={toggleDrawer(true)}
-              aria-label="open drawer"
-              size="large"
+          {/* Left Section - Menu/Logo */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            {isMobile && (
+              <IconButton
+                color="inherit"
+                edge="start"
+                onClick={toggleDrawer(true)}
+                aria-label="open navigation menu"
+                size="large"
+                sx={{
+                  "&:hover": {
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                  },
+                }}
+              >
+                <MenuIcon />
+              </IconButton>
+            )}
+
+            <Typography
+              variant={isMobile ? "h6" : "h5"}
+              fontWeight="bold"
+              sx={{
+                background: "linear-gradient(45deg, #fff, #f0f0f0)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
             >
-              <MenuIcon />
-            </IconButton>
-          ) : (
-            <Box sx={{ width: 48 }} />
+              75 WAYS Technologies
+            </Typography>
+          </Box>
+
+          {/* Center Section - Navigation (Desktop) */}
+          {!isMobile && (
+            <Box
+              sx={{
+                display: "flex",
+                gap: 2,
+                justifyContent: "center",
+                flexGrow: 1,
+                maxWidth: 700,
+              }}
+            >
+              {navigationItems.map(({ path, label }) => (
+                <NavigationButton
+                  key={path}
+                  path={path}
+                  label={label}
+                  isActive={isPathActive(path)}
+                />
+              ))}
+
+              {user?.isAdmin && (
+                <NavigationButton
+                  path="/admin"
+                  label="Admin"
+                  isActive={isPathActive("/admin")}
+                />
+              )}
+            </Box>
           )}
 
-          {/* Left side company name and welcome */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              color: "white",
-              flexGrow: 1,
-              px: 2,
-              gap: 2,
-            }}
-          >
-            <Typography variant="h5" fontWeight="bold" sx={{ flexGrow: 1 }}>
-              75 WAYS technologies
-            </Typography>
-            {user && (
-              <Box sx={{ textAlign: "right" }}>
-                <Typography variant="body2" sx={{ opacity: 0.75 }}>
+          {/* Right Section - User Actions */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            {/* Welcome message for larger screens */}
+            {!isMobile && user && (
+              <Box sx={{ textAlign: "right", mr: 2 }}>
+                <Typography variant="body2" sx={{ opacity: 0.8 }}>
                   Welcome back,
                 </Typography>
-                <Typography variant="subtitle1" fontWeight="bold" noWrap>
+                <Typography variant="h6" fontWeight="600" noWrap>
                   {user.name}
                 </Typography>
               </Box>
             )}
-          </Box>
 
-          {/* Center navbar buttons with active highlight */}
-          <Box
-            sx={{
-              display: "flex",
-              gap: 4,
-              justifyContent: "center",
-              flexGrow: 1,
-              maxWidth: 600,
-              flexWrap: "wrap",
-            }}
-          >
-            {["/book", "/my-appointments"].map((path, index) => {
-              const label = index === 0 ? "Booking" : "My Schedule";
-              return (
-                <Button
-                  key={path}
-                  component={NavLink}
-                  to={path}
-                  color="inherit"
-                  variant="outlined"
-                  size="large"
-                  sx={({ isActive }) => ({
-                    fontWeight: "bold",
-                    letterSpacing: 0.5,
-                    backgroundColor: isActive
-                      ? "secondary.main"
-                      : "transparent",
-                    color: isActive ? "white" : "inherit",
-                    "&:hover": {
-                      backgroundColor: isActive
-                        ? "secondary.dark"
-                        : "rgba(255,255,255,0.1)",
-                    },
-                    whiteSpace: "nowrap",
-                    minWidth: 108,
-                    borderRadius: 2,
-                  })}
-                >
-                  {label}
-                </Button>
-              );
-            })}
-
-            {/* Admin Panel Button */}
-            {user?.isAdmin && (
-              <Button
-                component={NavLink}
-                to="/admin"
-                color="inherit"
-                variant="outlined"
-                size="large"
-                sx={({ isActive }) => ({
-                  fontWeight: "bold",
-                  letterSpacing: 0.5,
-                  backgroundColor: isActive ? "secondary.main" : "transparent",
-                  color: isActive ? "white" : "inherit",
-                  "&:hover": {
-                    backgroundColor: isActive
-                      ? "secondary.dark"
-                      : "rgba(255,255,255,0.1)",
-                  },
-                  whiteSpace: "nowrap",
-                  minWidth: 130,
-                  borderRadius: 2,
-                })}
-              >
-                Admin Panel
-              </Button>
-            )}
-          </Box>
-
-          {/* Right side user profile, theme switcher, notifications */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            {/* Theme Switcher */}
             <ColorThemeSwitcher />
+
+            {/* Notifications */}
+
             <NotificationDropdown />
+
+            {/* User Menu (Desktop) */}
             {!isMobile && user && (
               <>
-                <Tooltip title={`${user.name} (${user.email})`}>
+                <Tooltip title={`${user.name} (${user.email})`} arrow>
                   <IconButton
                     edge="end"
-                    aria-label="account of current user"
-                    aria-controls="primary-account-menu"
+                    aria-label="account menu"
+                    aria-controls="user-account-menu"
                     aria-haspopup="true"
                     aria-expanded={Boolean(anchorEl)}
                     onClick={handleMenuOpen}
                     color="inherit"
                     size="large"
+                    sx={{
+                      "&:hover": {
+                        backgroundColor: "rgba(255,255,255,0.1)",
+                      },
+                    }}
                   >
                     <Avatar
-                      sx={{ width: 32, height: 32, bgcolor: "primary.main" }}
+                      sx={{
+                        width: 36,
+                        height: 36,
+                        bgcolor: "secondary.main",
+                        fontWeight: "bold",
+                        border: "2px solid rgba(255,255,255,0.2)",
+                      }}
                     >
-                      {user.name.charAt(0).toUpperCase()}
+                      {getUserInitials()}
                     </Avatar>
                   </IconButton>
                 </Tooltip>
 
+                {/* User Menu Dropdown */}
                 <Menu
-                  id="primary-account-menu"
+                  id="user-account-menu"
                   anchorEl={anchorEl}
                   open={Boolean(anchorEl)}
                   onClose={handleMenuClose}
                   anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                   transformOrigin={{ vertical: "top", horizontal: "right" }}
-                  closeAfterTransition={false}
                   slotProps={{
                     paper: {
                       sx: {
-                        minWidth: 200,
-                        mt: 1,
-                        boxShadow: 3,
+                        minWidth: 220,
+                        mt: 1.5,
+                        boxShadow: theme.shadows[8],
+                        borderRadius: 2,
+                        border: `1px solid ${theme.palette.divider}`,
                       },
                     },
                   }}
                 >
+                  {/* User Info Header */}
                   <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
-                    <Typography variant="subtitle2" fontWeight="bold">
-                      {user.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {user.email}
-                    </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                      <Avatar
+                        sx={{ bgcolor: "primary.main", width: 40, height: 40 }}
+                      >
+                        {getUserInitials()}
+                      </Avatar>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography
+                          variant="subtitle1"
+                          fontWeight="bold"
+                          noWrap
+                        >
+                          {user.name}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          noWrap
+                        >
+                          {user.email}
+                        </Typography>
+                        {user.isAdmin && (
+                          <Chip
+                            label="Administrator"
+                            size="small"
+                            color="primary"
+                            sx={{ mt: 0.5, fontSize: "0.7rem" }}
+                          />
+                        )}
+                      </Box>
+                    </Box>
                   </Box>
+
+                  {/* Menu Items */}
                   <MenuItem
                     component={Link}
                     to="/profile"
                     onClick={handleMenuClose}
+                    sx={{ py: 1.5 }}
                   >
-                    <PersonIcon sx={{ mr: 2 }} />
-                    Profile
+                    <PersonIcon sx={{ mr: 2, color: "text.secondary" }} />
+                    <Typography variant="body1">Profile</Typography>
                   </MenuItem>
+
                   <MenuItem
                     component={Link}
                     to="/settings"
                     onClick={handleMenuClose}
+                    sx={{ py: 1.5 }}
                   >
-                    <SettingsIcon sx={{ mr: 2 }} />
-                    Settings
+                    <SettingsIcon sx={{ mr: 2, color: "text.secondary" }} />
+                    <Typography variant="body1">Settings</Typography>
                   </MenuItem>
 
+                  {/* Admin Menu Items */}
                   {user.isAdmin && (
                     <>
-                      <MenuItem
-                        component={Link}
-                        to="/admin"
-                        onClick={handleMenuClose}
-                      >
-                        <AdminPanelSettingsIcon sx={{ mr: 2 }} />
-                        Admin Panel
-                      </MenuItem>
-                      <MenuItem
-                        component={Link}
-                        to="/admin/notifications"
-                        onClick={handleMenuClose}
-                      >
-                        <NotificationsIcon sx={{ mr: 2 }} />
-                        Admin Notifications
-                      </MenuItem>
-                      <MenuItem
-                        component={Link}
-                        to="/admin/users"
-                        onClick={handleMenuClose}
-                      >
-                        <PersonIcon sx={{ mr: 2 }} />
-                        Admin Users
-                      </MenuItem>
+                      <Divider />
+                      {adminNavigationItems.map(
+                        ({ path, label, icon: Icon }) => (
+                          <MenuItem
+                            key={path}
+                            component={Link}
+                            to={path}
+                            onClick={handleMenuClose}
+                            sx={{ py: 1.5 }}
+                          >
+                            <Icon sx={{ mr: 2, color: "secondary.main" }} />
+                            <Typography variant="body1">{label}</Typography>
+                          </MenuItem>
+                        )
+                      )}
                     </>
                   )}
 
                   <Divider />
 
-                  <MenuItem onClick={handleLogout} disabled={isLoading}>
-                    {isLoading ? (
-                      <CircularProgress size={20} />
+                  {/* Logout */}
+                  <MenuItem
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    sx={{
+                      py: 1.5,
+                      color: "error.main",
+                      "&:hover": {
+                        backgroundColor: "error.light",
+                        color: "error.contrastText",
+                      },
+                    }}
+                  >
+                    {isLoggingOut ? (
+                      <CircularProgress size={20} sx={{ mr: 2 }} />
                     ) : (
-                      <>
-                        <AccountCircle sx={{ mr: 2 }} />
-                        Logout
-                      </>
+                      <LogoutIcon sx={{ mr: 2 }} />
                     )}
+                    <Typography variant="body1">
+                      {isLoggingOut ? "Signing out..." : "Logout"}
+                    </Typography>
                   </MenuItem>
                 </Menu>
               </>
@@ -463,13 +644,33 @@ for a web application. Here is a breakdown of what the code is doing: */
       </AppBar>
 
       {/* Mobile Drawer */}
-      {isMobile && (
-        <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
-          {drawerList}
-        </Drawer>
-      )}
+      <Drawer
+        anchor="left"
+        open={drawerOpen}
+        onClose={toggleDrawer(false)}
+        ModalProps={{
+          keepMounted: true, // Better open performance on mobile
+        }}
+        sx={{
+          "& .MuiDrawer-paper": {
+            backgroundImage: "none",
+          },
+        }}
+      >
+        <DrawerContent />
+      </Drawer>
 
-      <Outlet />
+      {/* Main Content */}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          minHeight: "calc(100vh - 90px)",
+          backgroundColor: theme.palette.background.default,
+        }}
+      >
+        <Outlet />
+      </Box>
     </>
   );
 }
